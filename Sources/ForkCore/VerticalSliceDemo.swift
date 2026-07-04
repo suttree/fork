@@ -10,10 +10,15 @@ public struct VerticalSliceResult: Equatable, Sendable {
 public enum VerticalSliceDemo {
     public static func run(
         now: Date = Date(),
-        identityProvider: StoredIdentityProvider? = nil
+        identityProvider: StoredIdentityProvider? = nil,
+        readerRecordCache: (any RecordCache)? = nil
     ) throws -> VerticalSliceResult {
         let authorPeer = LocalPeer(name: "Author")
-        let readerPeer = LocalPeer(name: "Reader")
+        let readerPeer = if let readerRecordCache {
+            try LocalPeer(name: "Reader", recordCache: readerRecordCache)
+        } else {
+            LocalPeer(name: "Reader")
+        }
 
         let authorIdentity = try identityProvider?.loadOrCreateAuthorIdentity()
         if let authorIdentity {

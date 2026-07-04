@@ -26,18 +26,19 @@ Status: First in-memory vertical slice implemented.
 - Added verification before rendering; tampered records are refused.
 - Added a local two-peer exchange loop that fetches from an author peer, caches verified records on a reader peer, and renders the cached copy when no live author peer is available.
 - Added a local identity store abstraction with a Keychain-backed implementation for the macOS app.
+- Added a file-backed verified record cache for manifests and document records.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
 
 - Document private keys are not persisted yet.
-- Drafts and verified records are in memory, not persisted to disk.
+- Drafts are in memory, not persisted to disk.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
 
 ## Milestone 1: Project Scaffold
 
-Status: Started
+Status: Mostly done
 
 - Create native macOS app scaffold.
 - Prefer Swift and SwiftUI.
@@ -49,6 +50,10 @@ Output:
 
 - App launches.
 - User can see an empty reader/writer shell.
+
+Notes:
+
+- Verified records can now be mirrored to a file-backed cache.
 
 ## Milestone 2: Local Identity
 
@@ -102,7 +107,7 @@ Output:
 
 ## Milestone 5: Local Peer Loop
 
-Status: Started
+Status: Mostly done
 
 - Run two local peer instances on one machine.
 - Publish a signed document from peer A.
@@ -115,6 +120,11 @@ Output:
 
 - The core p2p/offline behavior works locally.
 - Cached signed content remains readable when the author peer is unavailable.
+
+Notes:
+
+- The local loop is still in-process, but verified records now survive peer restart through `FileRecordCache`.
+- Invalid signatures and malformed cache files are ignored on load rather than rendered.
 
 ## Milestone 6: First Real P2P Transport
 

@@ -32,12 +32,20 @@ public final class LocalPeer: @unchecked Sendable {
     public private(set) var authorIdentity: ForkIdentity?
     public private(set) var documentIdentity: ForkIdentity?
 
+    private let recordCache: (any RecordCache)?
     private var manifestsByAuthor: [String: SignedAuthorManifest] = [:]
     private var documentsByAddress: [String: SignedDocumentRecord] = [:]
     private var cachedAtByAddress: [String: Date] = [:]
 
     public init(name: String) {
         self.name = name
+        self.recordCache = nil
+    }
+
+    public init(name: String, recordCache: any RecordCache) throws {
+        self.name = name
+        self.recordCache = recordCache
+        try loadCachedRecords()
     }
 
     public func useAuthorIdentity(_ identity: ForkIdentity) {
@@ -136,7 +144,22 @@ public final class LocalPeer: @unchecked Sendable {
         return document
     }
 
+    public func exportManifest(_ address: ForkAddress) throws -> SignedAuthorManifest {
+        guard let manifest = manifestsByAuthor[address.rawValue] else {
+            throw ForkError.missingManifest(address)
+        }
+        return manifest
+    }
+
     public func accept(document: SignedDocumentRecord, cachedAt: Date = Date()) throws {
+        try accept(document: document, cachedAt: cachedAt, persist: true)
+    }
+
+    public func accept(manifest: SignedAuthorManifest, cachedAt: Date = Date()) throws {
+        try accept(manifest: manifest, cachedAt: cachedAt, persist: true)
+    }
+
+    private func accept(document: SignedDocumentRecord, cachedAt: Date, persist: Bool) throws {
         guard try ForkRecordSigner.verify(document) else {
             throw ForkError.invalidSignature
         }
@@ -149,10 +172,13 @@ public final class LocalPeer: @unchecked Sendable {
         documentsByAddress[address.rawValue] = selected
         if selected == document {
             cachedAtByAddress[address.rawValue] = cachedAt
+            if persist {
+                try recordCache?.save(document: document, address: address, cachedAt: cachedAt)
+            }
         }
     }
 
-    public func accept(manifest: SignedAuthorManifest, cachedAt: Date = Date()) throws {
+    private func accept(manifest: SignedAuthorManifest, cachedAt: Date, persist: Bool) throws {
         guard try ForkRecordSigner.verify(manifest) else {
             throw ForkError.invalidSignature
         }
@@ -165,6 +191,31 @@ public final class LocalPeer: @unchecked Sendable {
         manifestsByAuthor[address.rawValue] = selected
         if selected == manifest {
             cachedAtByAddress[address.rawValue] = cachedAt
+            if persist {
+                try recordCache?.save(manifest: manifest, address: address, cachedAt: cachedAt)
+            }
+        }
+    }
+
+    private func loadCachedRecords() throws {
+        guard let recordCache else {
+            return
+        }
+
+        for cachedManifest in try recordCache.loadManifests() {
+            try? accept(
+                manifest: cachedManifest.record,
+                cachedAt: cachedManifest.cachedAt,
+                persist: false
+            )
+        }
+
+        for cachedDocument in try recordCache.loadDocuments() {
+            try? accept(
+                document: cachedDocument.record,
+                cachedAt: cachedDocument.cachedAt,
+                persist: false
+            )
         }
     }
 

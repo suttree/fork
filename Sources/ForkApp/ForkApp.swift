@@ -1,4 +1,5 @@
 import ForkCore
+import Foundation
 import SwiftUI
 
 @main
@@ -13,7 +14,10 @@ struct ForkApp: App {
 struct ContentView: View {
     @State private var result: Result<VerticalSliceResult, Error> = Result {
         let identityProvider = StoredIdentityProvider(store: KeychainIdentityStore())
-        return try VerticalSliceDemo.run(identityProvider: identityProvider)
+        return try VerticalSliceDemo.run(
+            identityProvider: identityProvider,
+            readerRecordCache: FileRecordCache(rootDirectory: forkCacheDirectory())
+        )
     }
 
     var body: some View {
@@ -33,6 +37,16 @@ struct ContentView: View {
             .frame(minWidth: 760, minHeight: 520)
         }
     }
+}
+
+private func forkCacheDirectory() throws -> URL {
+    let applicationSupport = FileManager.default.urls(
+        for: .applicationSupportDirectory,
+        in: .userDomainMask
+    )[0]
+    return applicationSupport
+        .appendingPathComponent("Fork", isDirectory: true)
+        .appendingPathComponent("Records", isDirectory: true)
 }
 
 struct ForkShell: View {

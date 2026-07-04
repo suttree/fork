@@ -77,4 +77,119 @@ struct ForkCoreTests {
 
         #expect(result.authorAddress == identity.address)
     }
+
+    @Test("verified records survive a cache-backed peer restart")
+    func verifiedRecordsSurviveRestart() throws {
+        let rootURL = temporaryDirectory()
+        let cache = FileRecordCache(rootDirectory: rootURL)
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+
+        let authorPeer = LocalPeer(name: "Author")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Cached Place",
+            markdown: "# Cached Place\n\nStill here offline.",
+            createdAt: now
+        )
+
+        let readerPeer = try LocalPeer(name: "Reader", recordCache: cache)
+        let livePage = try readerPeer.renderAuthor(
+            authorAddress,
+            preferLivePeer: authorPeer,
+            fetchedAt: now
+        )
+        #expect(livePage.source == .live)
+
+        let restartedReader = try LocalPeer(
+            name: "Restarted Reader",
+            recordCache: FileRecordCache(rootDirectory: rootURL)
+        )
+        let cachedPage = try restartedReader.renderAuthor(authorAddress)
+
+        #expect(cachedPage.source == .cache(now))
+        #expect(cachedPage.markdown.contains("Still here offline."))
+    }
+
+    @Test("tampered cache files are not rendered after restart")
+    func tamperedCacheFilesAreNotRendered() throws {
+        let rootURL = temporaryDirectory()
+        let cache = FileRecordCache(rootDirectory: rootURL)
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+
+        let authorPeer = LocalPeer(name: "Author")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Cached Place",
+            markdown: "# Cached Place\n\nOriginal.",
+            createdAt: now
+        )
+
+        let readerPeer = try LocalPeer(name: "Reader", recordCache: cache)
+        _ = try readerPeer.renderAuthor(
+            authorAddress,
+            preferLivePeer: authorPeer,
+            fetchedAt: now
+        )
+
+        let manifest = try readerPeer.exportManifest(authorAddress)
+        let documentAddress = try ForkAddress(manifest.payload.homeDocument)
+        let documentURL = rootURL
+            .appendingPathComponent("documents", isDirectory: true)
+            .appendingPathComponent("\(documentAddress.key).json")
+        var cachedDocument = try JSONDecoder.fork.decode(
+            CachedDocumentRecord.self,
+            from: Data(contentsOf: documentURL)
+        )
+        cachedDocument.record.payload.markdown = "# Forged"
+        try JSONEncoder.fork.encode(cachedDocument).write(to: documentURL, options: [.atomic])
+
+        let restartedReader = try LocalPeer(
+            name: "Restarted Reader",
+            recordCache: FileRecordCache(rootDirectory: rootURL)
+        )
+
+        #expect(throws: ForkError.missingDocument(documentAddress)) {
+            try restartedReader.renderAuthor(authorAddress)
+        }
+    }
+
+    @Test("malformed cache files are ignored on restart")
+    func malformedCacheFilesAreIgnored() throws {
+        let rootURL = temporaryDirectory()
+        let manifestsURL = rootURL.appendingPathComponent("manifests", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: manifestsURL,
+            withIntermediateDirectories: true
+        )
+        try Data("not json".utf8).write(
+            to: manifestsURL.appendingPathComponent("broken.json")
+        )
+
+        _ = try LocalPeer(
+            name: "Restarted Reader",
+            recordCache: FileRecordCache(rootDirectory: rootURL)
+        )
+    }
+
+    private func temporaryDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("ForkCoreTests-\(UUID().uuidString)", isDirectory: true)
+    }
+}
+
+private extension JSONDecoder {
+    static var fork: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }
+}
+
+private extension JSONEncoder {
+    static var fork: JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        return encoder
+    }
 }
