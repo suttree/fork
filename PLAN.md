@@ -26,12 +26,12 @@ Status: First in-memory vertical slice implemented.
 - Added verification before rendering; tampered records are refused.
 - Added a local two-peer exchange loop that fetches from an author peer, caches verified records on a reader peer, and renders the cached copy when no live author peer is available.
 - Added a local identity store abstraction with a Keychain-backed implementation for the macOS app.
+- Added stable stored document identity for the demo home page.
 - Added a file-backed verified record cache for manifests and document records.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
 
-- Document private keys are not persisted yet.
 - Drafts are in memory, not persisted to disk.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
@@ -77,7 +77,7 @@ Notes:
 
 ## Milestone 3: Markdown Documents
 
-Status: Started
+Status: Mostly done
 
 - Create a Markdown document.
 - Assign it a stable document identity.
@@ -88,6 +88,11 @@ Status: Started
 Output:
 
 - User can write and preview one local Fork page.
+
+Notes:
+
+- The demo home document now loads or creates its document identity through the same app identity provider, so its `fork://doc/...` address is stable across launches.
+- Draft text is still hard-coded in the demo and needs real persistence next.
 
 ## Milestone 4: Signed Records
 

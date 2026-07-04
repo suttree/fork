@@ -52,6 +52,10 @@ public final class LocalPeer: @unchecked Sendable {
         authorIdentity = identity
     }
 
+    public func useDocumentIdentity(_ identity: ForkIdentity) {
+        documentIdentity = identity
+    }
+
     public func createAuthorIdentity() -> ForkAddress {
         let identity = ForkIdentity(role: .author)
         authorIdentity = identity

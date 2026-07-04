@@ -24,6 +24,12 @@ public enum VerticalSliceDemo {
         if let authorIdentity {
             authorPeer.useAuthorIdentity(authorIdentity)
         }
+
+        let documentIdentity = try identityProvider?.loadOrCreateDocumentIdentity(account: "home")
+        if let documentIdentity {
+            authorPeer.useDocumentIdentity(documentIdentity)
+        }
+
         let authorAddress = authorPeer.authorIdentity?.address ?? authorPeer.createAuthorIdentity()
         try authorPeer.publishHomePage(
             title: "A Small Fork Place",

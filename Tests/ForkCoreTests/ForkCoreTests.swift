@@ -64,6 +64,18 @@ struct ForkCoreTests {
         #expect(first.rawPrivateKey == second.rawPrivateKey)
     }
 
+    @Test("stored document identity is stable across loads")
+    func storedDocumentIdentityIsStable() throws {
+        let store = MemoryIdentityStore()
+        let provider = StoredIdentityProvider(store: store)
+
+        let first = try provider.loadOrCreateDocumentIdentity(account: "home")
+        let second = try provider.loadOrCreateDocumentIdentity(account: "home")
+
+        #expect(first.address == second.address)
+        #expect(first.rawPrivateKey == second.rawPrivateKey)
+    }
+
     @Test("vertical slice can use a stored author identity")
     func verticalSliceUsesStoredIdentity() throws {
         let store = MemoryIdentityStore()
@@ -76,6 +88,20 @@ struct ForkCoreTests {
         )
 
         #expect(result.authorAddress == identity.address)
+    }
+
+    @Test("vertical slice can use a stored document identity")
+    func verticalSliceUsesStoredDocumentIdentity() throws {
+        let store = MemoryIdentityStore()
+        let provider = StoredIdentityProvider(store: store)
+        let identity = try provider.loadOrCreateDocumentIdentity(account: "home")
+
+        let result = try VerticalSliceDemo.run(
+            now: Date(timeIntervalSince1970: 1_783_078_400),
+            identityProvider: provider
+        )
+
+        #expect(result.documentAddress == identity.address)
     }
 
     @Test("verified records survive a cache-backed peer restart")
