@@ -2,6 +2,22 @@
 
 Fork is a native Mac app for writing and visiting personal Markdown places on a slow peer-to-peer network.
 
+## Try the Prototype
+
+Build a local app bundle:
+
+```sh
+./Scripts/build-app.sh
+```
+
+Then launch it:
+
+```sh
+open .build/Fork.app
+```
+
+The app is still a prototype shell. It should show a signed Markdown page, the calm cached/offline status, and key-derived author/document addresses.
+
 It is not a web browser in the usual sense. It does not run JavaScript, render arbitrary HTML, support tabs, track readers, or treat engagement as a product goal. Fork is a browser/editor for signed Markdown documents that live on a peer-to-peer network and can be cached, shared, bookmarked, and revisited.
 
 ## Core Idea
