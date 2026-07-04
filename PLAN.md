@@ -1,320 +1,173 @@
-# Fork Plan
+# Fork Implementation Plan
 
-Fork is a native Mac app for writing and visiting personal Markdown places on a slow peer-to-peer network.
+This file tracks the next concrete steps for turning Fork from a concept into a working prototype.
 
-It is not a web browser in the usual sense. It does not run JavaScript, render arbitrary HTML, support tabs, track readers, or treat engagement as a product goal. Fork is a browser/editor for signed Markdown documents that live on a peer-to-peer network and can be cached, shared, bookmarked, and revisited.
-
-## Core Idea
-
-Fork brings back the feeling of small personal websites, blogs, portfolios, and digital gardens, but removes the parts of the modern web that made those places feel noisy or extractive.
-
-The app should make it easy to:
-
-- create a personal Fork identity
-- write Markdown pages and posts
-- publish a signed personal place
-- visit another person's Fork address
-- read cached pages when the author is offline
-- bookmark and wander through the network without domains, feeds, tabs, ads, or tracking
-
-## Product Principles
-
-- Native first: start with macOS, avoid Electron, and make the app feel at home on the Mac.
-- Markdown only: pages are Markdown plus a small, explicit set of supported assets and metadata.
-- No JavaScript: pages are documents, not remote programs.
-- No arbitrary HTML: rendering stays constrained, predictable, and safe.
-- No tabs: Fork should encourage reading and visiting, not attention hoarding.
-- No domains: addresses come from cryptographic keys, not rented names.
-- Offline is normal: cached signed pages are first-class, not an error state.
-- Slow is a feature: freshness matters less than authorship, integrity, and calm.
-- Boring infrastructure: use proven networking, storage, crypto, and Markdown tools where possible.
-- User-owned identity: publishing authority belongs to the holder of the private key.
-
-## Address Model
-
-Fork should avoid nice domains and human-readable URLs at the protocol level.
-
-Instead, addresses are derived from public keys:
-
-- an author key identifies a personal place
-- document keys identify individual pages
-- signed manifests connect an author to their current set of documents
-
-This gives every page a stable, unique address without DNS, accounts, usernames, or domain squatting.
-
-Example address shapes:
+The first goal is a thin vertical slice:
 
 ```text
-fork://author/<author-public-key>
-fork://doc/<document-public-key>
+Create identity -> write Markdown -> sign record -> verify record -> render page -> exchange with another local peer
 ```
 
-The author address is the main browsing entry point. Visiting it means:
+That slice should prove the heart of Fork before the app grows wider.
 
-```text
-Find the latest valid signed manifest for this author.
-Render the author's selected home document.
-```
+## Current Focus
 
-Document addresses are stable deep links. Visiting one means:
+Build the smallest native macOS prototype that can read and write verified Markdown records.
 
-```text
-Find the latest valid signed state for this document.
-Verify it belongs to the expected document key.
-Render the Markdown.
-```
+The first prototype does not need perfect UI, real internet discovery, themes, or multi-device support. It does need to treat p2p, signing, and offline/cached reading as core concepts from the beginning.
 
-The app can make these addresses friendlier in the interface with bookmarks, titles, local nicknames, icons, and reading history, but the protocol should remain key-based and domainless.
+## Prototype Progress
 
-## Signing Model
+Status: First in-memory vertical slice implemented.
 
-Each Fork install creates or imports an author identity:
+- Added a Swift Package with a `ForkCore` library and a small SwiftUI `ForkApp`.
+- Added key-derived author and document addresses using CryptoKit signing keys.
+- Added signed author manifests and signed document records with stable JSON encoding.
+- Added verification before rendering; tampered records are refused.
+- Added a local two-peer exchange loop that fetches from an author peer, caches verified records on a reader peer, and renders the cached copy when no live author peer is available.
+- Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
-- private author key: stored locally and protected by the OS keychain
-- public author key: shared as the author's network address
+Still not done:
 
-Each document can also have its own key:
+- Private keys are not stored in Keychain yet.
+- Drafts and verified records are in memory, not persisted to disk.
+- The peer loop is local/in-process, not a real p2p transport.
+- The app shell is intentionally plain and only demonstrates the slice.
 
-- private document key: used to publish updates to that page
-- public document key: used as the page address
+## Milestone 1: Project Scaffold
 
-A signed author manifest says:
+Status: Started
 
-```text
-This is my current site.
-These document keys belong to this place.
-This document is the home page.
-This is the current version number.
-This replaces the previous manifest hash.
-Signed by the author private key.
-```
+- Create native macOS app scaffold.
+- Prefer Swift and SwiftUI.
+- Keep the app small and plain at first.
+- Add a simple split between reading and writing.
+- Add basic local persistence for drafts and verified records.
 
-A signed document record says:
+Output:
 
-```text
-This is the current Markdown for this document.
-This is its title and metadata.
-This is the current version number.
-This replaces the previous document hash.
-Signed by the document private key.
-Optionally countersigned or listed by the author manifest.
-```
+- App launches.
+- User can see an empty reader/writer shell.
 
-Readers verify signatures before trusting content. Peers can be stale, unavailable, or dishonest, but they cannot forge a valid update without the relevant private key.
+## Milestone 2: Local Identity
 
-Core rule:
+Status: Started
 
-```text
-Stale is acceptable. Forged is not.
-```
+- Generate an author keypair on first launch.
+- Store private key securely.
+- Derive a `fork://author/<key>` address from the public key.
+- Show the address in the app.
+- Add a way to copy the address.
 
-## P2P Model
+Output:
 
-The p2p layer is core from the start.
+- A fresh install has a stable Fork author address.
+- The private key stays local.
 
-Fork apps should be peers. A peer can:
+## Milestone 3: Markdown Documents
 
-- announce signed records it has
-- request records for an author or document key
-- cache records it has visited
-- serve cached records to other peers
-- try the author's own device first when reachable
-- fall back to cached copies from the network when the author is offline
+Status: Started
 
-Initial network behavior:
+- Create a Markdown document.
+- Assign it a stable document identity.
+- Derive a `fork://doc/<key>` address.
+- Edit Markdown locally.
+- Render Markdown in a read view.
 
-```text
-1. User visits fork://author/<key>.
-2. Fork asks the network for signed manifests for that key.
-3. Fork picks the newest valid manifest it can verify.
-4. Fork fetches the referenced Markdown document records and assets.
-5. Fork renders the page.
-6. Fork caches the verified records locally.
-```
+Output:
 
-If the author's device is online, it may serve the freshest version directly. If not, any peer with a cached valid copy can help.
+- User can write and preview one local Fork page.
 
-The UI should make offline status calm and legible:
+## Milestone 4: Signed Records
 
-```text
-Showing cached version from 2026-07-04.
-Looking for newer signed versions...
-```
+Status: Started
 
-## Likely Building Blocks
+- Define first JSON shape for author manifests.
+- Define first JSON shape for document records.
+- Sign document records.
+- Sign author manifests.
+- Verify signatures before rendering.
+- Refuse to render invalid records.
 
-The exact stack should be validated in a prototype, but the bias is:
+Output:
 
-- App: Swift, SwiftUI, and AppKit where needed
-- Markdown: a proven Swift Markdown parser/renderer
-- Crypto: Apple's CryptoKit where suitable
-- Local storage: plain files plus a small local index database if needed
-- P2P: libp2p or another mature peer-to-peer stack
-- Assets: content-addressed blobs referenced from signed Markdown records
+- Fork renders verified Markdown, not arbitrary local text.
+- Invalid signatures fail visibly and calmly.
 
-One open question is whether the p2p core should be written directly in Swift or run as a small local core in a language with stronger libp2p support. The app should still be native; a helper process is acceptable if it keeps the network layer boring and reliable.
+## Milestone 5: Local Peer Loop
 
-## MVP
+Status: Started
 
-The first working version should prove the whole shape, not every feature.
+- Run two local peer instances on one machine.
+- Publish a signed document from peer A.
+- Fetch it from peer B.
+- Verify it on peer B.
+- Cache it on peer B.
+- Render it from cache if peer A is offline.
 
-MVP capabilities:
+Output:
 
-- launch native Mac app
-- create local author identity
-- create a first Fork place
-- write Markdown in a built-in editor
-- create stable document keys for pages
-- publish signed author manifest
-- publish signed document records
-- run as a p2p peer
-- visit another author address
-- retrieve signed content from the network
-- verify signatures before rendering
-- cache verified pages locally
-- show offline/cached state clearly
-- bookmark author and document addresses
-- render Markdown with one or two simple themes
+- The core p2p/offline behavior works locally.
+- Cached signed content remains readable when the author peer is unavailable.
 
-Out of scope for MVP:
+## Milestone 6: First Real P2P Transport
 
-- comments
-- likes
-- analytics
-- feeds
-- tabs
-- arbitrary HTML
-- JavaScript
-- custom domains
-- multi-device authoring
-- rich theme marketplace
-- search engine crawling
-- moderation system beyond local blocking
+Status: Not started
 
-## App Shape
+- Choose the p2p building block.
+- Prefer boring, proven infrastructure.
+- Evaluate whether the networking core should be Swift-native or a small helper process.
+- Add peer discovery.
+- Exchange manifests, document records, and blobs over the network.
+- Serve cached verified records to other peers.
 
-Fork has two main modes:
+Output:
 
-- Read: visit addresses, browse bookmarks, move backward and forward, read cached pages.
-- Write: edit your own Markdown documents, preview them, publish signed updates.
+- Two machines can exchange and verify Fork pages.
 
-Navigation should be intentionally restrained:
+## Milestone 7: Offline-First UX
 
-- one current page
-- back and forward
-- bookmarks
-- reading history
-- maybe a reading shelf for saved places
+Status: Not started
 
-No tabs.
+- Show whether the page is live, cached, or unavailable.
+- Show cache age.
+- Keep offline states calm.
+- Keep reading possible whenever a verified cached copy exists.
 
-The interface should make addresses feel less important than places:
+Output:
 
-- show titles and local nicknames first
-- keep full key addresses copyable
-- let users bookmark weird key addresses with personal labels
-- allow trails of linked Fork documents to become the browsing experience
+- Offline is treated as a normal reading state.
 
-## Data Model Sketch
+## Milestone 8: Bookmark-Led Browsing
 
-Author manifest:
+Status: Not started
 
-```json
-{
-  "type": "fork.authorManifest",
-  "authorPublicKey": "...",
-  "version": 1,
-  "previous": null,
-  "homeDocument": "fork://doc/...",
-  "documents": [
-    {
-      "address": "fork://doc/...",
-      "role": "page",
-      "title": "Home"
-    }
-  ],
-  "theme": "plain",
-  "createdAt": "2026-07-04T00:00:00Z",
-  "signature": "..."
-}
-```
+- Bookmark author addresses.
+- Bookmark document addresses.
+- Add local nicknames for ugly addresses.
+- Add history and back/forward.
+- Keep the app tabless.
 
-Document record:
+Output:
 
-```json
-{
-  "type": "fork.documentRecord",
-  "documentPublicKey": "...",
-  "version": 1,
-  "previous": null,
-  "title": "Hello Fork",
-  "markdownBlob": "bafy...",
-  "assets": [],
-  "createdAt": "2026-07-04T00:00:00Z",
-  "signature": "..."
-}
-```
+- Fork browsing starts to feel different from URL/domain browsing.
 
-Rendered pages should come from verified records only.
+## First Technical Questions To Resolve
 
-## Open Questions
+- Should document keys be independent keypairs, or should document addresses be derived from author key plus document id?
+- Which Swift Markdown renderer gives us the best constrained rendering path?
+- Can CryptoKit cover the signing model cleanly?
+- What is the most maintainable p2p layer for a native Mac app?
+- Should the local peer loop be implemented before or after the visible app shell?
 
-- Should every document have its own keypair, or should documents use stable content identifiers signed only by the author key?
-- Should document keys be recoverable from the author key, or generated independently and listed in the author manifest?
-- How much HTML-like Markdown should be allowed, if any?
-- What image and asset limits should exist?
-- How should private key backup and recovery work?
-- How should multi-device publishing work later?
-- How do bookmarks, trails, and discovery work without turning into a feed?
-- Should peers pin friends' sites by default, explicitly, or never automatically?
-- What local blocking or filtering primitives are needed for abuse?
-- What is the minimum viable p2p stack on macOS that still feels maintainable?
+## Near-Term Definition Of Done
 
-## First Implementation Milestones
+The first vertical slice is done when:
 
-1. Project scaffold
-   - Create a native macOS app.
-   - Choose initial Markdown renderer.
-   - Create basic read/write split.
+- one local author can publish a signed Markdown document
+- another local peer can fetch it
+- the second peer verifies it before rendering
+- the second peer can still render its cached verified copy when the first peer is offline
+- the UI clearly says when a page is cached
 
-2. Local identity
-   - Generate author keypair.
-   - Store private key securely.
-   - Display copyable Fork author address.
-
-3. Local documents
-   - Create Markdown documents.
-   - Assign stable document addresses.
-   - Render preview from Markdown.
-
-4. Signed publishing
-   - Write signed author manifests.
-   - Write signed document records.
-   - Verify records before rendering, even locally.
-
-5. Local peer loop
-   - Run two local Fork peers.
-   - Publish from one.
-   - Visit from the other.
-   - Verify and cache content.
-
-6. Real p2p transport
-   - Add peer discovery.
-   - Fetch manifests and records over the network.
-   - Serve cached verified records.
-
-7. Offline UX
-   - Prefer freshest reachable signed version.
-   - Fall back to cached signed versions.
-   - Show cache age and verification state calmly.
-
-8. Bookmark-led browsing
-   - Save author and document addresses.
-   - Add local nicknames.
-   - Add reading history without tabs.
-
-## Working Tagline
-
-```text
-Fork is a native, tabless Markdown browser/editor for signed personal places on a slow p2p network.
-```
+No tabs. No JavaScript. No domains.
