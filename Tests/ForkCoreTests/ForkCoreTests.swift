@@ -51,4 +51,30 @@ struct ForkCoreTests {
         #expect(try author.address.publicKeyData == author.publicKeyData)
         #expect(try document.address.publicKeyData == document.publicKeyData)
     }
+
+    @Test("stored author identity is stable across loads")
+    func storedAuthorIdentityIsStable() throws {
+        let store = MemoryIdentityStore()
+        let provider = StoredIdentityProvider(store: store)
+
+        let first = try provider.loadOrCreateAuthorIdentity()
+        let second = try provider.loadOrCreateAuthorIdentity()
+
+        #expect(first.address == second.address)
+        #expect(first.rawPrivateKey == second.rawPrivateKey)
+    }
+
+    @Test("vertical slice can use a stored author identity")
+    func verticalSliceUsesStoredIdentity() throws {
+        let store = MemoryIdentityStore()
+        let provider = StoredIdentityProvider(store: store)
+        let identity = try provider.loadOrCreateAuthorIdentity()
+
+        let result = try VerticalSliceDemo.run(
+            now: Date(timeIntervalSince1970: 1_783_078_400),
+            identityProvider: provider
+        )
+
+        #expect(result.authorAddress == identity.address)
+    }
 }

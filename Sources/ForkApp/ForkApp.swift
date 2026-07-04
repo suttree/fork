@@ -12,7 +12,8 @@ struct ForkApp: App {
 
 struct ContentView: View {
     @State private var result: Result<VerticalSliceResult, Error> = Result {
-        try VerticalSliceDemo.run()
+        let identityProvider = StoredIdentityProvider(store: KeychainIdentityStore())
+        return try VerticalSliceDemo.run(identityProvider: identityProvider)
     }
 
     var body: some View {

@@ -8,11 +8,18 @@ public struct VerticalSliceResult: Equatable, Sendable {
 }
 
 public enum VerticalSliceDemo {
-    public static func run(now: Date = Date()) throws -> VerticalSliceResult {
+    public static func run(
+        now: Date = Date(),
+        identityProvider: StoredIdentityProvider? = nil
+    ) throws -> VerticalSliceResult {
         let authorPeer = LocalPeer(name: "Author")
         let readerPeer = LocalPeer(name: "Reader")
 
-        let authorAddress = authorPeer.createAuthorIdentity()
+        let authorIdentity = try identityProvider?.loadOrCreateAuthorIdentity()
+        if let authorIdentity {
+            authorPeer.useAuthorIdentity(authorIdentity)
+        }
+        let authorAddress = authorPeer.authorIdentity?.address ?? authorPeer.createAuthorIdentity()
         try authorPeer.publishHomePage(
             title: "A Small Fork Place",
             markdown: """

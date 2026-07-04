@@ -25,11 +25,12 @@ Status: First in-memory vertical slice implemented.
 - Added signed author manifests and signed document records with stable JSON encoding.
 - Added verification before rendering; tampered records are refused.
 - Added a local two-peer exchange loop that fetches from an author peer, caches verified records on a reader peer, and renders the cached copy when no live author peer is available.
+- Added a local identity store abstraction with a Keychain-backed implementation for the macOS app.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
 
-- Private keys are not stored in Keychain yet.
+- Document private keys are not persisted yet.
 - Drafts and verified records are in memory, not persisted to disk.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
@@ -51,7 +52,7 @@ Output:
 
 ## Milestone 2: Local Identity
 
-Status: Started
+Status: Mostly done
 
 - Generate an author keypair on first launch.
 - Store private key securely.
@@ -63,6 +64,11 @@ Output:
 
 - A fresh install has a stable Fork author address.
 - The private key stays local.
+
+Notes:
+
+- `ForkApp` now loads or creates its author identity through Keychain.
+- Tests use an in-memory identity store so they do not touch the user's Keychain.
 
 ## Milestone 3: Markdown Documents
 
