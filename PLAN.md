@@ -28,11 +28,12 @@ Status: First in-memory vertical slice implemented.
 - Added a local identity store abstraction with a Keychain-backed implementation for the macOS app.
 - Added stable stored document identity for the demo home page.
 - Added a file-backed verified record cache for manifests and document records.
+- Added a file-backed home draft store and wired the demo publish path to it.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
 
-- Drafts are in memory, not persisted to disk.
+- The editor UI does not yet save edits back to the draft store interactively.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
 
@@ -54,6 +55,7 @@ Output:
 Notes:
 
 - Verified records can now be mirrored to a file-backed cache.
+- Drafts can now be mirrored to a file-backed store.
 
 ## Milestone 2: Local Identity
 
@@ -92,7 +94,8 @@ Output:
 Notes:
 
 - The demo home document now loads or creates its document identity through the same app identity provider, so its `fork://doc/...` address is stable across launches.
-- Draft text is still hard-coded in the demo and needs real persistence next.
+- The demo home draft now loads from a draft store when one exists, otherwise it creates the default Markdown draft.
+- The next UI step is to make edits in the text editor write back to that draft store.
 
 ## Milestone 4: Signed Records
 

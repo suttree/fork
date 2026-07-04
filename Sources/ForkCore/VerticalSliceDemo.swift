@@ -11,6 +11,7 @@ public enum VerticalSliceDemo {
     public static func run(
         now: Date = Date(),
         identityProvider: StoredIdentityProvider? = nil,
+        draftProvider: StoredDraftProvider? = nil,
         readerRecordCache: (any RecordCache)? = nil
     ) throws -> VerticalSliceResult {
         let authorPeer = LocalPeer(name: "Author")
@@ -31,13 +32,19 @@ public enum VerticalSliceDemo {
         }
 
         let authorAddress = authorPeer.authorIdentity?.address ?? authorPeer.createAuthorIdentity()
-        try authorPeer.publishHomePage(
+        let draft = try draftProvider?.loadOrCreateHomeDraft(now: now) ?? DraftDocument(
+            id: "home",
             title: "A Small Fork Place",
             markdown: """
             # A Small Fork Place
 
             This page was written as Markdown, signed by its document key, exchanged with another local peer, and rendered after the author peer went offline.
             """,
+            updatedAt: now
+        )
+        try authorPeer.publishHomePage(
+            title: draft.title,
+            markdown: draft.markdown,
             createdAt: now
         )
 

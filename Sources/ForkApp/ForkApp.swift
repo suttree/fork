@@ -16,6 +16,9 @@ struct ContentView: View {
         let identityProvider = StoredIdentityProvider(store: KeychainIdentityStore())
         return try VerticalSliceDemo.run(
             identityProvider: identityProvider,
+            draftProvider: StoredDraftProvider(
+                store: FileDraftStore(rootDirectory: forkDraftDirectory())
+            ),
             readerRecordCache: FileRecordCache(rootDirectory: forkCacheDirectory())
         )
     }
@@ -40,13 +43,22 @@ struct ContentView: View {
 }
 
 private func forkCacheDirectory() throws -> URL {
+    forkApplicationSupportDirectory()
+        .appendingPathComponent("Records", isDirectory: true)
+}
+
+private func forkDraftDirectory() throws -> URL {
+    forkApplicationSupportDirectory()
+        .appendingPathComponent("Drafts", isDirectory: true)
+}
+
+private func forkApplicationSupportDirectory() -> URL {
     let applicationSupport = FileManager.default.urls(
         for: .applicationSupportDirectory,
         in: .userDomainMask
     )[0]
     return applicationSupport
         .appendingPathComponent("Fork", isDirectory: true)
-        .appendingPathComponent("Records", isDirectory: true)
 }
 
 struct ForkShell: View {

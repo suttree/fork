@@ -104,6 +104,46 @@ struct ForkCoreTests {
         #expect(result.documentAddress == identity.address)
     }
 
+    @Test("home draft is loaded from draft storage")
+    func homeDraftIsLoadedFromDraftStorage() throws {
+        let draftStore = MemoryDraftStore()
+        let draftProvider = StoredDraftProvider(store: draftStore)
+        try draftStore.saveDraft(
+            DraftDocument(
+                id: "home",
+                title: "Stored Draft",
+                markdown: "# Stored Draft\n\nThis came from disk-shaped state.",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_400)
+            )
+        )
+
+        let result = try VerticalSliceDemo.run(
+            now: Date(timeIntervalSince1970: 1_783_078_401),
+            draftProvider: draftProvider
+        )
+
+        #expect(result.livePage.title == "Stored Draft")
+        #expect(result.livePage.markdown.contains("disk-shaped state"))
+    }
+
+    @Test("file draft store survives restart")
+    func fileDraftStoreSurvivesRestart() throws {
+        let rootURL = temporaryDirectory()
+        let firstStore = FileDraftStore(rootDirectory: rootURL)
+        let draft = DraftDocument(
+            id: "home",
+            title: "Restarted Draft",
+            markdown: "# Restarted Draft",
+            updatedAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+        try firstStore.saveDraft(draft)
+
+        let secondStore = FileDraftStore(rootDirectory: rootURL)
+        let loaded = try secondStore.loadDraft(id: "home")
+
+        #expect(loaded == draft)
+    }
+
     @Test("verified records survive a cache-backed peer restart")
     func verifiedRecordsSurviveRestart() throws {
         let rootURL = temporaryDirectory()
