@@ -1195,8 +1195,16 @@ final class ForkAppModel: ObservableObject {
                     statusMessage = "Sample author is offline. Verified cached copies remain readable."
                 }
             } else {
+                let shouldRefreshFromLive = page?.authorAddress == sampleAddress
                 try startSampleServer()
-                statusMessage = "Sample author is online over localhost."
+                if shouldRefreshFromLive {
+                    let address = try ForkAddress(addressText.trimmingCharacters(in: .whitespacesAndNewlines))
+                    let renderedPage = try renderAddress(address.rawValue)
+                    show(renderedPage, displayedAddress: address.rawValue, addHistory: false)
+                    statusMessage = statusText(for: renderedPage)
+                } else {
+                    statusMessage = "Sample author is online over localhost."
+                }
             }
         } catch {
             errorMessage = error.localizedDescription
