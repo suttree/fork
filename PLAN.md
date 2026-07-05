@@ -36,6 +36,7 @@ Status: First in-memory vertical slice implemented.
 - Wired the prototype app's publish/read path through the loopback transport.
 - Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
 - Added verified cached rendering for `fork://doc/...` document deep links.
+- Added local bookmark nicknames so ugly key addresses can have personal labels.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
@@ -195,7 +196,8 @@ Notes:
 
 - The app now has a Fork address field, bookmark persistence, and back/forward history for visited author places.
 - The address field can visit cached author and document addresses.
-- Bookmarking currently stores author addresses only; document-address bookmarks and local nicknames are still next.
+- Bookmarks now support local nicknames.
+- Bookmarking currently stores author addresses only; document-address bookmarks are still next.
 
 ## First Technical Questions To Resolve
 

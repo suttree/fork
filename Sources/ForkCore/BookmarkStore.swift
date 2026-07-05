@@ -4,13 +4,20 @@ public struct ForkBookmark: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var address: String
     public var title: String
+    public var nickname: String?
     public var createdAt: Date
 
-    public init(address: String, title: String, createdAt: Date) {
+    public init(address: String, title: String, nickname: String? = nil, createdAt: Date) {
         self.id = address
         self.address = address
         self.title = title
+        self.nickname = nickname
         self.createdAt = createdAt
+    }
+
+    public var displayTitle: String {
+        let trimmedNickname = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmedNickname.isEmpty ? title : trimmedNickname
     }
 }
 

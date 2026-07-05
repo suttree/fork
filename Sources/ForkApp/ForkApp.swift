@@ -78,7 +78,17 @@ struct ForkShell: View {
                         Button {
                             model.visit(bookmark.address)
                         } label: {
-                            Label(bookmark.title, systemImage: "bookmark")
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(bookmark.displayTitle)
+                                    Text(bookmark.address)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                            } icon: {
+                                Image(systemName: "bookmark")
+                            }
                         }
                     }
                 }
@@ -92,6 +102,7 @@ struct ForkShell: View {
             VStack(spacing: 0) {
                 AddressBar(
                     address: $model.addressText,
+                    bookmarkLabel: $model.bookmarkLabel,
                     visit: model.visitAddress,
                     bookmark: model.bookmarkCurrentPage
                 )
@@ -137,22 +148,30 @@ struct ForkShell: View {
 
 struct AddressBar: View {
     @Binding var address: String
+    @Binding var bookmarkLabel: String
     let visit: () -> Void
     let bookmark: () -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
-            TextField("fork://author/...", text: $address)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(.body, design: .monospaced))
-                .onSubmit(visit)
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                TextField("fork://author/...", text: $address)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+                    .onSubmit(visit)
 
-            Button(action: visit) {
-                Label("Visit", systemImage: "arrow.right.circle")
+                Button(action: visit) {
+                    Label("Visit", systemImage: "arrow.right.circle")
+                }
             }
 
-            Button(action: bookmark) {
-                Label("Bookmark", systemImage: "bookmark")
+            HStack(spacing: 8) {
+                TextField("Local nickname", text: $bookmarkLabel)
+                    .textFieldStyle(.roundedBorder)
+
+                Button(action: bookmark) {
+                    Label("Bookmark", systemImage: "bookmark")
+                }
             }
         }
         .padding(12)
@@ -266,6 +285,7 @@ final class ForkAppModel: ObservableObject {
     @Published var statusMessage = "Ready."
     @Published var errorMessage: String?
     @Published var addressText = ""
+    @Published var bookmarkLabel = ""
     @Published var bookmarks: [ForkBookmark] = []
     @Published var canGoBack = false
     @Published var canGoForward = false
@@ -385,6 +405,7 @@ final class ForkAppModel: ObservableObject {
             let bookmark = ForkBookmark(
                 address: page.authorAddress.rawValue,
                 title: page.title,
+                nickname: bookmarkLabel,
                 createdAt: Date()
             )
             bookmarks.removeAll { $0.address == bookmark.address }
@@ -450,6 +471,7 @@ final class ForkAppModel: ObservableObject {
     private func show(_ renderedPage: RenderedPage, displayedAddress: String, addHistory: Bool) {
         page = renderedPage
         addressText = displayedAddress
+        bookmarkLabel = bookmarkLabel(for: displayedAddress) ?? renderedPage.title
 
         if addHistory {
             if let index = historyIndex, index + 1 < history.count {
@@ -486,5 +508,9 @@ final class ForkAppModel: ObservableObject {
         let index = historyIndex ?? 0
         canGoBack = historyIndex != nil && index > 0
         canGoForward = historyIndex != nil && index + 1 < history.count
+    }
+
+    private func bookmarkLabel(for address: String) -> String? {
+        bookmarks.first { $0.address == address }?.displayTitle
     }
 }

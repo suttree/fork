@@ -16,7 +16,7 @@ Then launch it:
 open .build/Fork.app
 ```
 
-The app is still a prototype shell. It should show a signed Markdown page, the calm cached/offline status, and key-derived author/document addresses. You can edit the home draft, save it, and publish a new signed record from the editor. The prototype now serves and fetches that signed record bundle over localhost.
+The app is still a prototype shell. It should show a signed Markdown page, the calm cached/offline status, and key-derived author/document addresses. You can edit the home draft, save it, publish a new signed record from the editor, visit cached Fork addresses, and save bookmarks with local nicknames. The prototype serves and fetches signed record bundles over localhost.
 
 It is not a web browser in the usual sense. It does not run JavaScript, render arbitrary HTML, support tabs, track readers, or treat engagement as a product goal. Fork is a browser/editor for signed Markdown documents that live on a peer-to-peer network and can be cached, shared, bookmarked, and revisited.
 

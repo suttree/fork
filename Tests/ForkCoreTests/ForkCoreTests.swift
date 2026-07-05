@@ -153,6 +153,7 @@ struct ForkCoreTests {
             ForkBookmark(
                 address: "fork://author/example",
                 title: "Example",
+                nickname: "Local Example",
                 createdAt: Date(timeIntervalSince1970: 1_783_078_400)
             )
         ]
@@ -162,6 +163,19 @@ struct ForkCoreTests {
         let loaded = try secondStore.loadBookmarks()
 
         #expect(loaded == bookmarks)
+        #expect(loaded.first?.displayTitle == "Local Example")
+    }
+
+    @Test("bookmark display title falls back to page title")
+    func bookmarkDisplayTitleFallsBackToPageTitle() {
+        let bookmark = ForkBookmark(
+            address: "fork://author/example",
+            title: "Original Title",
+            nickname: " ",
+            createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+
+        #expect(bookmark.displayTitle == "Original Title")
     }
 
     @Test("verified records survive a cache-backed peer restart")
