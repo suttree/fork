@@ -47,6 +47,7 @@ Status: First in-memory vertical slice implemented.
 - Added multi-document publishing so the signed author manifest can list every local draft.
 - Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.
 - Incomplete author bundles are rejected before anything is cached.
+- Bundles with bad update chains are rejected before any newer manifest or document is cached.
 - Author bundles now reject manifests whose home page is not one of the listed document pages.
 - Manifests now reject duplicate document addresses and page roles that disagree with the home document.
 - Cache reload now restores only complete verified author bundles after restart.
@@ -203,6 +204,7 @@ Notes:
 - The local loop is still in-process, but verified records now survive peer restart through `FileRecordCache`.
 - Invalid signatures and malformed cache files are ignored on load rather than rendered.
 - Incomplete bundles are rejected without partially caching their manifests or documents.
+- Bad update chains in bundles are rejected before any partial cache mutation.
 - Fetching now goes through encoded `AuthorRecordBundle` data, which is closer to the shape a real transport will move across the network.
 - A reader with verified cached records can now act as an `AuthorBundleSource` for another reader.
 

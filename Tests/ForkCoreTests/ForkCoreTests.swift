@@ -710,6 +710,97 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("author bundles reject bad update chains without partial caching")
+    func authorBundlesRejectBadUpdateChainsWithoutPartialCaching() throws {
+        let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
+        let secondDate = Date(timeIntervalSince1970: 1_783_078_500)
+        let authorIdentity = ForkIdentity(role: .author)
+        let documentIdentity = ForkIdentity(role: .document)
+        let readerPeer = LocalPeer(name: "Reader")
+        let firstDocumentPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "First",
+            markdown: "# First",
+            version: 1,
+            previous: nil,
+            createdAt: firstDate
+        )
+        let firstDocument = try ForkRecordSigner.signDocument(
+            payload: firstDocumentPayload,
+            with: documentIdentity
+        )
+        let firstManifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: documentIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: documentIdentity.address.rawValue,
+                    role: "home",
+                    title: "First"
+                )
+            ],
+            createdAt: firstDate
+        )
+        let firstManifest = try ForkRecordSigner.signManifest(
+            payload: firstManifestPayload,
+            with: authorIdentity
+        )
+        try readerPeer.importAuthorBundle(
+            AuthorRecordBundle(manifest: firstManifest, documents: [firstDocument]),
+            expectedAuthor: authorIdentity.address,
+            cachedAt: firstDate
+        )
+
+        let secondDocumentPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Second",
+            markdown: "# Second",
+            version: 2,
+            previous: Base64URL.encode(Data(repeating: 1, count: 32)),
+            createdAt: secondDate
+        )
+        let secondDocument = try ForkRecordSigner.signDocument(
+            payload: secondDocumentPayload,
+            with: documentIdentity
+        )
+        let secondManifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 2,
+            previous: try ForkRecordHasher.hash(firstManifest),
+            homeDocument: documentIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: documentIdentity.address.rawValue,
+                    role: "home",
+                    title: "Second"
+                )
+            ],
+            createdAt: secondDate
+        )
+        let secondManifest = try ForkRecordSigner.signManifest(
+            payload: secondManifestPayload,
+            with: authorIdentity
+        )
+
+        #expect(throws: ForkError.invalidSignature) {
+            try readerPeer.importAuthorBundle(
+                AuthorRecordBundle(manifest: secondManifest, documents: [secondDocument]),
+                expectedAuthor: authorIdentity.address,
+                cachedAt: secondDate
+            )
+        }
+        let cachedManifest = try readerPeer.exportManifest(authorIdentity.address)
+        let cachedPage = try readerPeer.renderAuthor(authorIdentity.address)
+
+        #expect(cachedManifest == firstManifest)
+        #expect(cachedPage.title == "First")
+        #expect(cachedPage.source == .cache(firstDate))
+    }
+
     @Test("author bundles reject home documents missing from manifest page list")
     func authorBundlesRejectUnlistedHomeDocument() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)

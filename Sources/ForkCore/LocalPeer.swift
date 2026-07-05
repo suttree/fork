@@ -331,6 +331,21 @@ public final class LocalPeer: @unchecked Sendable {
                 throw ForkError.invalidSignature
             }
         }
+
+        try validateReplacementChain(
+            current: manifestsByAuthor[expectedAuthor.rawValue],
+            incoming: bundle.manifest
+        )
+        for document in bundle.documents {
+            let documentAddress = ForkAddress(
+                kind: .document,
+                publicKeyData: try Base64URL.decode(document.payload.documentPublicKey)
+            )
+            try validateReplacementChain(
+                current: documentsByAddress[documentAddress.rawValue],
+                incoming: document
+            )
+        }
     }
 
     public func accept(document: SignedDocumentRecord, cachedAt: Date = Date()) throws {
@@ -581,16 +596,29 @@ public final class LocalPeer: @unchecked Sendable {
         current: T?,
         incoming: T
     ) throws -> T where T: VersionedRecord {
+        try validateReplacementChain(current: current, incoming: incoming)
         guard let current else {
             return incoming
         }
         guard incoming.recordVersion > current.recordVersion else {
             return current
         }
+        return incoming
+    }
+
+    private func validateReplacementChain<T>(
+        current: T?,
+        incoming: T
+    ) throws where T: VersionedRecord {
+        guard let current else {
+            return
+        }
+        guard incoming.recordVersion > current.recordVersion else {
+            return
+        }
         guard incoming.previousRecordHash == (try ForkRecordHasher.hash(current)) else {
             throw ForkError.invalidSignature
         }
-        return incoming
     }
 }
 
