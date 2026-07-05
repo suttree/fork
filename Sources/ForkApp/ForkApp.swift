@@ -1610,6 +1610,9 @@ final class ForkAppModel: ObservableObject {
         if history.count > Self.historyLimit {
             history = Array(history.suffix(Self.historyLimit))
         }
+        if history != storedHistory {
+            saveHistory()
+        }
         historyIndex = history.isEmpty ? nil : history.count - 1
         updateHistoryEntries()
         updateHistoryAvailability()

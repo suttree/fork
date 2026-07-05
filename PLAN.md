@@ -303,6 +303,7 @@ Notes:
 - The app now has a Fork address field, bookmark persistence, and back/forward history for visited author places.
 - The app remembers the last visited Fork address across launches.
 - Browsing history now persists across launches.
+- Browsing history now cleans invalid or over-limit stored entries on launch.
 - History can now be cleared from the sidebar.
 - Empty history now has a quiet visible state.
 - The address field can visit cached author and document addresses.
