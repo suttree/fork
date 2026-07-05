@@ -75,6 +75,7 @@ struct ForkShell: View {
                             iconName: "doc.text"
                         )
                     }
+                    .help(model.ownPlaceAddress ?? "Local author place")
 
                     if model.samplePlaceAddress != nil {
                         Button {
@@ -86,6 +87,7 @@ struct ForkShell: View {
                                 iconName: "network"
                             )
                         }
+                        .help(model.samplePlaceAddress ?? "Sample author place")
 
                         Button {
                             model.toggleSamplePeer()
@@ -1007,6 +1009,7 @@ final class ForkAppModel: ObservableObject {
     @Published var canGoBack = false
     @Published var canGoForward = false
     @Published var canVisitPlaceHome = false
+    @Published var ownPlaceAddress: String?
     @Published var samplePlaceAddress: String?
     @Published var samplePeerOnline = false
     @Published var isConfirmingDraftDeletion = false
@@ -1430,6 +1433,7 @@ final class ForkAppModel: ObservableObject {
         authorPeer.useAuthorIdentity(authorIdentity)
         authorPeer.useDocumentIdentity(documentIdentity)
         authorAddress = authorIdentity.address
+        ownPlaceAddress = authorIdentity.address.rawValue
         try startAuthorTransport()
         try startSampleTransport()
         bookmarks = try bookmarkStore.loadBookmarks()

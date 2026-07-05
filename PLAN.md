@@ -67,6 +67,7 @@ Status: First in-memory vertical slice implemented.
 - Added a second sample author place in the app, fetched over its own loopback peer.
 - Added a sample-author online/offline toggle to demonstrate verified cached reading in the app.
 - The Read sidebar now labels the local author place and sample author online/cache-only state.
+- The Read sidebar now keeps local and sample author addresses available as hover help.
 - Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
 - The app now restores the last visited Fork address on launch when it can be rendered.
 - Browsing history now persists across launches as verified Fork addresses.
