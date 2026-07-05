@@ -42,11 +42,12 @@ Status: First in-memory vertical slice implemented.
 - Added document-address bookmarks and visible history entries in the sidebar.
 - Added copy controls for author and document addresses in the reader.
 - Surfaced live/cached/unavailable status in the browsing address bar.
+- Added a signed place page list in the sidebar from the current author manifest.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
 
-- The writer can publish multiple local documents, but it is still missing a proper document manager and page-to-page navigation.
+- The writer can publish multiple local documents, but it is still missing a proper document manager.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
 
@@ -113,6 +114,7 @@ Notes:
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
 - Publishing now signs document records for every local draft and lists them in the author manifest, with the selected draft as the home document.
 - Cached document addresses can now be rendered directly as verified deep links.
+- The sidebar can now show and visit the pages listed by the current verified author manifest.
 
 ## Milestone 4: Signed Records
 

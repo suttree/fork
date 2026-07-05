@@ -73,6 +73,29 @@ struct ForkShell: View {
                     }
                 }
 
+                if !model.placePages.isEmpty {
+                    Section("Place") {
+                        ForEach(model.placePages) { page in
+                            Button {
+                                model.visit(page.address)
+                            } label: {
+                                Label {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(page.title)
+                                            .lineLimit(1)
+                                        Text(page.subtitle)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                } icon: {
+                                    Image(systemName: page.isHome ? "house" : "doc.text")
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section("History") {
                     ForEach(model.historyEntries) { entry in
                         Button {
@@ -190,6 +213,28 @@ struct ForkHistoryEntry: Identifiable, Equatable {
     let id: String
     let address: String
     let title: String
+}
+
+struct ForkPlacePage: Identifiable, Equatable {
+    let id: String
+    let address: String
+    let title: String
+    let role: String
+    let isCurrent: Bool
+
+    var isHome: Bool {
+        role == "home"
+    }
+
+    var subtitle: String {
+        if isCurrent {
+            return "Current page"
+        }
+        if isHome {
+            return "Home"
+        }
+        return address
+    }
 }
 
 struct AddressBar: View {
@@ -364,6 +409,7 @@ final class ForkAppModel: ObservableObject {
     @Published var bookmarkLabel = ""
     @Published var bookmarks: [ForkBookmark] = []
     @Published var historyEntries: [ForkHistoryEntry] = []
+    @Published var placePages: [ForkPlacePage] = []
     @Published var drafts: [DraftDocument] = []
     @Published var selectedDraftID = "home"
     @Published var canGoBack = false
@@ -629,6 +675,7 @@ final class ForkAppModel: ObservableObject {
         page = renderedPage
         addressText = displayedAddress
         bookmarkLabel = bookmarkLabel(for: displayedAddress) ?? renderedPage.title
+        updatePlacePages(for: renderedPage)
 
         if addHistory {
             if let index = historyIndex, index + 1 < history.count {
@@ -645,6 +692,23 @@ final class ForkAppModel: ObservableObject {
         updateHistoryAvailability()
     }
 
+    private func updatePlacePages(for renderedPage: RenderedPage) {
+        guard let manifest = try? readerPeer.exportManifest(renderedPage.authorAddress) else {
+            placePages = []
+            return
+        }
+
+        placePages = manifest.payload.documents.map { document in
+            ForkPlacePage(
+                id: document.address,
+                address: document.address,
+                title: document.title,
+                role: document.role,
+                isCurrent: document.address == renderedPage.documentAddress.rawValue
+            )
+        }
+    }
+
     private func restoreHistorySelection() {
         guard let index = historyIndex else {
             return
@@ -652,9 +716,8 @@ final class ForkAppModel: ObservableObject {
 
         do {
             let address = try ForkAddress(history[index])
-            page = try readerPeer.render(address)
-            addressText = address.rawValue
-            bookmarkLabel = bookmarkLabel(for: address.rawValue) ?? page?.title ?? ""
+            let renderedPage = try readerPeer.render(address)
+            show(renderedPage, displayedAddress: address.rawValue, addHistory: false)
             statusMessage = "Showing verified cached record."
             updateHistoryEntries()
             updateHistoryAvailability()
