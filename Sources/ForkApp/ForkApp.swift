@@ -849,17 +849,26 @@ final class ForkAppModel: ObservableObject {
             guard let authorAddress else {
                 return
             }
-            let renderedPage = try readerPeer.renderAuthor(
+            let homePage = try readerPeer.renderAuthor(
                 authorAddress,
                 preferLiveSource: authorClient,
                 fetchedAt: now
             )
+            let currentDocument = documents.first(where: { $0.draftID == draft.id })?.publication.identity.address
+            let displayedAddress: ForkAddress
+            let renderedPage: RenderedPage
+            if let currentDocument, currentDocument != homeDocument {
+                displayedAddress = currentDocument
+                renderedPage = try readerPeer.render(currentDocument)
+            } else {
+                displayedAddress = authorAddress
+                renderedPage = homePage
+            }
             show(
                 renderedPage,
-                displayedAddress: authorAddress.rawValue,
-                addHistory: history.isEmpty
+                displayedAddress: displayedAddress.rawValue,
+                addHistory: history.isEmpty || displayedAddress.rawValue != addressText
             )
-            addressText = authorAddress.rawValue
             try refreshDrafts()
             statusMessage = "Published signed place over localhost."
         } catch {
