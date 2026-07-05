@@ -1139,7 +1139,8 @@ struct EditorWorkspace: View {
                                 scheduleAutosave()
                             }
                     }
-                    .frame(maxWidth: 860, alignment: .leading)
+                    .frame(maxWidth: 760, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .top)
                 }
 
                 Divider().overlay(theme.divider)
