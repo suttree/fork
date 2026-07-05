@@ -1703,8 +1703,22 @@ final class ForkAppModel: ObservableObject {
         let draft = try draftProvider.loadOrCreateHomeDraft()
         try refreshDrafts()
         applyDraft(draft)
-        publish()
+        try showOwnPlaceOrPublishInitialPlace()
         restoreLastAddressIfNeeded(launchAddress)
+    }
+
+    private func showOwnPlaceOrPublishInitialPlace() throws {
+        guard let authorAddress else {
+            return
+        }
+
+        do {
+            let renderedPage = try renderAddress(authorAddress.rawValue)
+            show(renderedPage, displayedAddress: authorAddress.rawValue, addHistory: history.isEmpty)
+            statusMessage = statusText(for: renderedPage)
+        } catch ForkError.missingManifest, ForkError.missingDocument {
+            publish()
+        }
     }
 
     private func startAuthorTransport() throws {
@@ -1805,14 +1819,10 @@ final class ForkAppModel: ObservableObject {
     }
 
     private func refreshDraftDocumentAddresses() {
-        var addresses: [String: String] = [:]
-        for draft in drafts {
-            do {
-                let identity = try loadDocumentIdentity(account: draft.id)
-                addresses[draft.id] = identity.address.rawValue
-            } catch {
-                errorMessage = error.localizedDescription
-            }
+        let draftIDs = Set(drafts.map(\.id))
+        var addresses = draftDocumentAddresses.filter { draftIDs.contains($0.key) }
+        if let selectedAddress = try? loadDocumentIdentity(account: selectedDraftID).address.rawValue {
+            addresses[selectedDraftID] = selectedAddress
         }
         draftDocumentAddresses = addresses
     }
