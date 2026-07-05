@@ -810,6 +810,8 @@ struct DraftAddressCopyRow: View {
 
 @MainActor
 final class ForkAppModel: ObservableObject {
+    private static let lastAddressKey = "ForkLastAddress"
+
     @Published var draftTitle = ""
     @Published var draftMarkdown = ""
     @Published var draftDocumentAddress = ""
@@ -1165,11 +1167,13 @@ final class ForkAppModel: ObservableObject {
         try startSampleTransport()
         bookmarks = try bookmarkStore.loadBookmarks()
         addressText = authorIdentity.address.rawValue
+        let launchAddress = UserDefaults.standard.string(forKey: Self.lastAddressKey)
 
         let draft = try draftProvider.loadOrCreateHomeDraft()
         try refreshDrafts()
         applyDraft(draft)
         publish()
+        restoreLastAddressIfNeeded(launchAddress)
     }
 
     private func startAuthorTransport() throws {
@@ -1302,6 +1306,7 @@ final class ForkAppModel: ObservableObject {
         page = renderedPage
         addressText = displayedAddress
         bookmarkLabel = bookmarkLabel(for: displayedAddress) ?? renderedPage.title
+        UserDefaults.standard.set(displayedAddress, forKey: Self.lastAddressKey)
         updatePlacePages(for: renderedPage)
 
         if addHistory {
@@ -1317,6 +1322,16 @@ final class ForkAppModel: ObservableObject {
 
         updateHistoryEntries()
         updateHistoryAvailability()
+    }
+
+    private func restoreLastAddressIfNeeded(_ storedAddress: String?) {
+        guard let storedAddress,
+              !storedAddress.isEmpty,
+              storedAddress != addressText else {
+            return
+        }
+
+        visit(storedAddress)
     }
 
     private func updatePlacePages(for renderedPage: RenderedPage) {
