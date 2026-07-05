@@ -811,6 +811,8 @@ struct DraftAddressCopyRow: View {
 @MainActor
 final class ForkAppModel: ObservableObject {
     private static let lastAddressKey = "ForkLastAddress"
+    private static let historyKey = "ForkHistory"
+    private static let historyLimit = 50
 
     @Published var draftTitle = ""
     @Published var draftMarkdown = ""
@@ -1168,6 +1170,7 @@ final class ForkAppModel: ObservableObject {
         bookmarks = try bookmarkStore.loadBookmarks()
         addressText = authorIdentity.address.rawValue
         let launchAddress = UserDefaults.standard.string(forKey: Self.lastAddressKey)
+        loadHistory()
 
         let draft = try draftProvider.loadOrCreateHomeDraft()
         try refreshDrafts()
@@ -1317,7 +1320,11 @@ final class ForkAppModel: ObservableObject {
             if history.last != displayedAddress {
                 history.append(displayedAddress)
             }
+            if history.count > Self.historyLimit {
+                history = Array(history.suffix(Self.historyLimit))
+            }
             historyIndex = history.count - 1
+            saveHistory()
         }
 
         updateHistoryEntries()
@@ -1332,6 +1339,23 @@ final class ForkAppModel: ObservableObject {
         }
 
         visit(storedAddress)
+    }
+
+    private func loadHistory() {
+        let storedHistory = UserDefaults.standard.stringArray(forKey: Self.historyKey) ?? []
+        history = storedHistory.compactMap { rawAddress in
+            (try? ForkAddress(rawAddress))?.rawValue
+        }
+        if history.count > Self.historyLimit {
+            history = Array(history.suffix(Self.historyLimit))
+        }
+        historyIndex = history.isEmpty ? nil : history.count - 1
+        updateHistoryEntries()
+        updateHistoryAvailability()
+    }
+
+    private func saveHistory() {
+        UserDefaults.standard.set(history, forKey: Self.historyKey)
     }
 
     private func updatePlacePages(for renderedPage: RenderedPage) {
