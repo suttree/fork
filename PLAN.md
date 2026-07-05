@@ -320,6 +320,7 @@ Notes:
 - Bookmarking now uses the displayed page address even if the address field has unsent edits.
 - Bookmark saves now distinguish new bookmarks from updated nicknames.
 - Bookmark nicknames are now trimmed before saving, with blank nicknames falling back to page titles.
+- Loaded bookmark identities now follow their Fork addresses instead of stale stored ids.
 - Bookmark saves now immediately show the normalized local display title in the nickname field.
 - Bookmark rows show whether a saved address is an author place or document page.
 - Bookmark rows keep the raw Fork address available as hover help.

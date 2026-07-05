@@ -522,6 +522,25 @@ struct ForkCoreTests {
         #expect(decoded.displayTitle == "Local Example")
     }
 
+    @Test("decoded bookmark ids follow addresses")
+    func decodedBookmarkIDsFollowAddresses() throws {
+        let json = """
+        {
+          "id": "stale-id",
+          "address": "fork://author/example",
+          "title": "Original Title",
+          "createdAt": "2026-07-04T12:00:00Z"
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let bookmark = try decoder.decode(ForkBookmark.self, from: Data(json.utf8))
+
+        #expect(bookmark.id == "fork://author/example")
+        #expect(bookmark.address == "fork://author/example")
+    }
+
     @Test("verified records survive a cache-backed peer restart")
     func verifiedRecordsSurviveRestart() throws {
         let rootURL = temporaryDirectory()

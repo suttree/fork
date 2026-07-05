@@ -30,7 +30,7 @@ public struct ForkBookmark: Codable, Equatable, Identifiable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let address = try container.decode(String.self, forKey: .address)
-        self.id = try container.decodeIfPresent(String.self, forKey: .id) ?? address
+        self.id = address
         self.address = address
         self.title = try container.decode(String.self, forKey: .title)
         self.nickname = Self.normalizedNickname(try container.decodeIfPresent(String.self, forKey: .nickname))
