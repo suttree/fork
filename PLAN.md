@@ -2,6 +2,19 @@
 
 This file tracks the next concrete steps for turning Fork from a concept into a working prototype.
 
+## Product Direction
+
+Fork is now best framed as a networked Markdown editor with a built-in reader/discovery surface.
+
+The earlier browser-like framing was useful for proving what Fork is not: it is not trying to be a Chromium fork, a tabbed web browser, or a compatibility layer for arbitrary websites. Fork should feel closer to Byword, Bear, iA Writer, or a personal digital garden editor, paired with a calm RSS-reader-like way to discover and read other people's signed Markdown places.
+
+The app should have two primary modes:
+
+- **Editor**: the author's home base for writing, arranging, previewing, linking, and publishing their own Markdown place.
+- **Discover**: the reader surface for visiting other people's places, following trails, managing bookmarks/history, and reading verified cached copies when peers are offline.
+
+This keeps the peer-to-peer network central, but makes writing and maintaining a personal place the daily reason to open the app.
+
 The first goal is a thin vertical slice:
 
 ```text
@@ -12,9 +25,13 @@ That slice should prove the heart of Fork before the app grows wider.
 
 ## Current Focus
 
-Build the smallest native macOS prototype that can read and write verified Markdown records.
+Build the smallest native macOS prototype that feels good as a local Markdown editor first, while keeping verified peer-to-peer publishing and discovery alive from the start.
 
-The first prototype does not need perfect UI, real internet discovery, themes, or multi-device support. It does need to treat p2p, signing, and offline/cached reading as core concepts from the beginning.
+The first prototype does not need perfect UI, real internet discovery, or multi-device support. It does need a clearer product split:
+
+- Editor should make writing, previewing, adding pages, linking pages, and publishing feel direct.
+- Discover should make reading, bookmarks, history, local nicknames, and cached/offline states feel calm.
+- Signing, peer exchange, and verified cache behavior should remain core infrastructure, not a later bolt-on.
 
 ## Prototype Progress
 
@@ -99,6 +116,9 @@ Status: First in-memory vertical slice implemented.
 Still not done:
 
 - The writer page manager works locally, but still needs product polish around richer page roles and larger places.
+- The app shell should move from a cramped reader/writer split toward explicit Editor and Discover modes.
+- The Editor side needs to feel more like a real Markdown writing app before the MVP is credible.
+- The Discover side needs to feel more like an RSS-reader-style place reader than a generic browser.
 - The peer loop is local/localhost-only, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
 
@@ -189,6 +209,28 @@ Notes:
 - The sidebar can now show and visit the pages listed by the current verified author manifest.
 - The reader toolbar can now jump from a document page back to the current place's home page.
 - Next: improve richer page roles and larger-place management polish.
+
+## Milestone 3A: Editor-First App Shape
+
+Status: Not started
+
+- Reframe the app shell around two primary modes: Editor and Discover.
+- Make Editor the default daily workspace for the user's own place.
+- Move local page management, draft status, preview, publish, and page links into the Editor surface.
+- Keep Discover focused on reading other places, bookmarks, history, address entry, and cached/offline state.
+- Reduce the feeling that writing and browsing are competing in one split pane.
+- Preserve the ability to preview the current page while editing.
+
+Output:
+
+- Fork feels like a networked Markdown editor first.
+- The reader/discovery model remains available, but it is not the main writing workspace.
+
+Notes:
+
+- This is a product-direction milestone, not a crypto/networking milestone.
+- The current split-pane prototype can be reused, but it should be reorganized rather than simply decorated.
+- A top-level Editor/Discover switch is the likely next UI step.
 
 ## Milestone 4: Signed Records
 
