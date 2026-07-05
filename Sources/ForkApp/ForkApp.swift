@@ -932,7 +932,48 @@ private struct MarkdownBlocksView: View {
     }
 
     private func inlineMarkdown(_ markdown: String) -> AttributedString {
-        (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
+        let forkMarkdown = markdownWithWikiLinks(markdown)
+        return (try? AttributedString(markdown: forkMarkdown)) ?? AttributedString(markdown)
+    }
+
+    private func markdownWithWikiLinks(_ markdown: String) -> String {
+        var output = ""
+        var cursor = markdown.startIndex
+
+        while cursor < markdown.endIndex {
+            guard let opening = markdown[cursor...].range(of: "[[") else {
+                output += markdown[cursor...]
+                break
+            }
+
+            output += markdown[cursor..<opening.lowerBound]
+            let titleStart = opening.upperBound
+            guard let closing = markdown[titleStart...].range(of: "]]") else {
+                output += markdown[opening.lowerBound...]
+                break
+            }
+
+            let rawTitle = String(markdown[titleStart..<closing.lowerBound])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if rawTitle.isEmpty {
+                output += markdown[opening.lowerBound..<closing.upperBound]
+            } else {
+                output += markdownLink(forWikiTitle: rawTitle)
+            }
+            cursor = closing.upperBound
+        }
+
+        return output
+    }
+
+    private func markdownLink(forWikiTitle title: String) -> String {
+        let escapedTitle = title
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "[", with: "\\[")
+            .replacingOccurrences(of: "]", with: "\\]")
+        let destination = title
+            .addingPercentEncoding(withAllowedCharacters: .forkWikiLinkDestinationAllowed) ?? title
+        return "[\(escapedTitle)](\(destination))"
     }
 
     private func headingFont(for level: Int) -> Font {
@@ -946,6 +987,14 @@ private struct MarkdownBlocksView: View {
         default:
             return .system(size: ForkTypography.body, weight: .semibold)
         }
+    }
+}
+
+private extension CharacterSet {
+    static var forkWikiLinkDestinationAllowed: CharacterSet {
+        var allowed = CharacterSet.urlPathAllowed
+        allowed.remove(charactersIn: "#?[]()")
+        return allowed
     }
 }
 
