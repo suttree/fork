@@ -161,6 +161,7 @@ Notes:
 - The demo home draft now loads from a draft store when one exists, otherwise it creates the default Markdown draft.
 - The prototype editor can now save edits back to the draft store and publish a signed record from the current draft.
 - The writer now quietly autosaves local title and Markdown edits after a short pause.
+- The reader now calls out when it is showing the last signed version while unpublished local edits are open in the writer.
 - The writer has an edit/preview switch for local Markdown drafts.
 - Draft titles are now trimmed before saving, with blank titles falling back to `Untitled Page`.
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.

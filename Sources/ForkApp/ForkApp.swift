@@ -264,6 +264,7 @@ struct ForkShell: View {
                     ReaderView(
                         page: page,
                         theme: model.readerTheme,
+                        hasUnpublishedLocalDraft: model.hasUnpublishedLocalDraft,
                         copyAddress: model.addressCopied,
                         copyPlaceMarkdownLink: model.copyCurrentPlaceMarkdownLink,
                         copyMarkdownLink: model.copyCurrentPageMarkdownLink,
@@ -683,6 +684,7 @@ struct AddressBar: View {
 struct ReaderView: View {
     let page: RenderedPage
     let theme: ForkReaderTheme
+    let hasUnpublishedLocalDraft: Bool
     let copyAddress: () -> Void
     let copyPlaceMarkdownLink: () -> Void
     let copyMarkdownLink: () -> Void
@@ -767,11 +769,20 @@ struct ReaderView: View {
     }
 
     private var statusText: String {
+        if hasUnpublishedLocalDraft {
+            switch page.source {
+            case .live:
+                return "Showing last signed version. Unpublished local edits are open in the writer."
+            case .cache(let date):
+                return "Showing verified cached version from \(date.formatted(date: .abbreviated, time: .shortened)). Unpublished local edits are open in the writer."
+            }
+        }
+
         switch page.source {
         case .live:
-            "Showing newest signed version from the author peer."
+            return "Showing newest signed version from the author peer."
         case .cache(let date):
-            "Showing verified cached version from \(date.formatted(date: .abbreviated, time: .shortened)). Looking for newer signed versions..."
+            return "Showing verified cached version from \(date.formatted(date: .abbreviated, time: .shortened)). Looking for newer signed versions..."
         }
     }
 
@@ -997,6 +1008,7 @@ final class ForkAppModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var addressText = ""
     @Published var bookmarkLabel = ""
+    @Published var hasUnpublishedLocalDraft = false
     @Published var bookmarks: [ForkBookmark] = []
     @Published var historyEntries: [ForkHistoryEntry] = []
     @Published var placePages: [ForkPlacePage] = []
@@ -1061,7 +1073,10 @@ final class ForkAppModel: ObservableObject {
         do {
             _ = try persistDraft()
             try refreshDrafts()
-            statusMessage = "Page saved."
+            refreshUnpublishedDraftState()
+            statusMessage = hasUnpublishedLocalDraft
+                ? "Page saved locally. Publish signed place to update the reader."
+                : "Page saved."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Page could not be saved."
@@ -1072,6 +1087,10 @@ final class ForkAppModel: ObservableObject {
         do {
             _ = try persistDraft()
             try refreshDrafts()
+            refreshUnpublishedDraftState()
+            if hasUnpublishedLocalDraft {
+                statusMessage = "Local edits saved. Publish signed place to update the reader."
+            }
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Page could not be autosaved."
@@ -1528,6 +1547,7 @@ final class ForkAppModel: ObservableObject {
         draftTitle = draft.title
         draftMarkdown = draft.markdown
         refreshDraftDocumentAddress()
+        refreshUnpublishedDraftState()
     }
 
     private func refreshDrafts() throws {
@@ -1628,6 +1648,7 @@ final class ForkAppModel: ObservableObject {
         UserDefaults.standard.set(displayedAddress, forKey: Self.lastAddressKey)
         updatePlacePages(for: renderedPage)
         syncWriterSelection(for: renderedPage)
+        refreshUnpublishedDraftState()
 
         if addHistory {
             if let index = historyIndex, index + 1 < history.count {
@@ -1716,6 +1737,28 @@ final class ForkAppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func refreshUnpublishedDraftState() {
+        hasUnpublishedLocalDraft = selectedDraftHasUnpublishedChanges()
+    }
+
+    private func selectedDraftHasUnpublishedChanges() -> Bool {
+        guard let page,
+              page.authorAddress == authorAddress,
+              let selectedDraftAddress = try? identityProvider.loadOrCreateDocumentIdentity(account: selectedDraftID).address,
+              selectedDraftAddress == page.documentAddress else {
+            return false
+        }
+
+        let draft = DraftDocument(
+            id: selectedDraftID,
+            title: draftTitle,
+            markdown: draftMarkdown,
+            updatedAt: Date(),
+            pageOrder: currentDraftPageOrder()
+        )
+        return draft.title != page.title || draft.markdown != page.markdown
     }
 
     private func localDraft(for documentAddress: ForkAddress) throws -> DraftDocument? {
