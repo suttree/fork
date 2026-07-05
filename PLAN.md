@@ -259,6 +259,7 @@ Notes:
 - The address bar includes cache timestamps when showing a verified cached copy.
 - Address failures now distinguish invalid Fork addresses, unavailable verified cache entries, and refused unverifiable records.
 - The sample author can be taken offline in the app after a live visit, so the cached-reader path is visible without leaving the prototype.
+- Taking the sample author offline while reading it now immediately refreshes the reader into the verified cached state.
 - The reader has a persisted theme picker with colorful reader-owned Classic, Starship, and NvChad modes. Authors may publish content and metadata, but the reader keeps final control of how pages look locally.
 
 ## Milestone 8: Bookmark-Led Browsing

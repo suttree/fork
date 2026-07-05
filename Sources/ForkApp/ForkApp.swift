@@ -1184,8 +1184,16 @@ final class ForkAppModel: ObservableObject {
     func toggleSamplePeer() {
         do {
             if samplePeerOnline {
+                let shouldRefreshFromCache = page?.authorAddress == sampleAddress
                 stopSampleServer()
-                statusMessage = "Sample author is offline. Verified cached copies remain readable."
+                if shouldRefreshFromCache {
+                    let address = try ForkAddress(addressText.trimmingCharacters(in: .whitespacesAndNewlines))
+                    let renderedPage = try renderAddress(address.rawValue)
+                    show(renderedPage, displayedAddress: address.rawValue, addHistory: false)
+                    statusMessage = statusText(for: renderedPage)
+                } else {
+                    statusMessage = "Sample author is offline. Verified cached copies remain readable."
+                }
             } else {
                 try startSampleServer()
                 statusMessage = "Sample author is online over localhost."
@@ -1199,16 +1207,7 @@ final class ForkAppModel: ObservableObject {
     func visit(_ rawAddress: String) {
         do {
             let address = try ForkAddress(rawAddress.trimmingCharacters(in: .whitespacesAndNewlines))
-            let renderedPage: RenderedPage
-            if address.kind == .author {
-                renderedPage = try readerPeer.renderAuthor(
-                    address,
-                    preferLiveSource: liveSource(for: address),
-                    fetchedAt: Date()
-                )
-            } else {
-                renderedPage = try readerPeer.render(address)
-            }
+            let renderedPage = try renderAddress(address.rawValue)
             show(renderedPage, displayedAddress: address.rawValue, addHistory: true)
             statusMessage = statusText(for: renderedPage)
         } catch {
@@ -1538,6 +1537,18 @@ final class ForkAppModel: ObservableObject {
             }
         }
         return nil
+    }
+
+    private func renderAddress(_ rawAddress: String) throws -> RenderedPage {
+        let address = try ForkAddress(rawAddress.trimmingCharacters(in: .whitespacesAndNewlines))
+        if address.kind == .author {
+            return try readerPeer.renderAuthor(
+                address,
+                preferLiveSource: liveSource(for: address),
+                fetchedAt: Date()
+            )
+        }
+        return try readerPeer.render(address)
     }
 
     private func restoreHistorySelection() {
