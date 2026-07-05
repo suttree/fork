@@ -52,6 +52,7 @@ Status: First in-memory vertical slice implemented.
 - Author bundles now reject manifest page titles that disagree with the signed document records.
 - Author bundles now reject manifests whose home page is not one of the listed document pages.
 - Manifests now reject duplicate document addresses and page roles that disagree with the home document.
+- Cache reload ignores saved bundles whose manifest titles no longer match their signed document records.
 - Cache reload now restores only complete verified author bundles after restart.
 - Verified cached peers can re-serve author bundles to other readers.
 - Added a byte-oriented bundle codec and source protocol so transports can move encoded signed record bundles.

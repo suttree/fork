@@ -1730,6 +1730,47 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("cached manifest titles must still match documents after restart")
+    func cachedManifestTitlesMustStillMatchDocumentsAfterRestart() throws {
+        let rootURL = temporaryDirectory()
+        let cache = FileRecordCache(rootDirectory: rootURL)
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+
+        let authorPeer = LocalPeer(name: "Author")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Cached Place",
+            markdown: "# Cached Place\n\nOriginal.",
+            createdAt: now
+        )
+
+        let readerPeer = try LocalPeer(name: "Reader", recordCache: cache)
+        _ = try readerPeer.renderAuthor(
+            authorAddress,
+            preferLivePeer: authorPeer,
+            fetchedAt: now
+        )
+
+        let manifestURL = rootURL
+            .appendingPathComponent("manifests", isDirectory: true)
+            .appendingPathComponent("\(authorAddress.key).json")
+        var cachedManifest = try JSONDecoder.fork.decode(
+            CachedAuthorManifest.self,
+            from: Data(contentsOf: manifestURL)
+        )
+        cachedManifest.record.payload.documents[0].title = "Forged Title"
+        try JSONEncoder.fork.encode(cachedManifest).write(to: manifestURL, options: [.atomic])
+
+        let restartedReader = try LocalPeer(
+            name: "Restarted Reader",
+            recordCache: FileRecordCache(rootDirectory: rootURL)
+        )
+
+        #expect(throws: ForkError.missingManifest(authorAddress)) {
+            try restartedReader.renderAuthor(authorAddress)
+        }
+    }
+
     @Test("incomplete cache bundles are ignored on restart")
     func incompleteCacheBundlesAreIgnoredOnRestart() throws {
         let rootURL = temporaryDirectory()
