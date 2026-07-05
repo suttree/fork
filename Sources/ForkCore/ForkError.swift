@@ -5,6 +5,7 @@ public enum ForkError: Error, Equatable, LocalizedError {
     case invalidBase64URL
     case invalidPublicKey
     case invalidSignature
+    case missingPublicationDocuments
     case missingDocument(ForkAddress)
     case missingManifest(ForkAddress)
 
@@ -18,6 +19,8 @@ public enum ForkError: Error, Equatable, LocalizedError {
             "Invalid public key."
         case .invalidSignature:
             "This record was not signed by the expected key."
+        case .missingPublicationDocuments:
+            "A Fork place needs at least one document to publish."
         case .missingDocument(let address):
             "No verified cached document for \(address.rawValue)."
         case .missingManifest(let address):

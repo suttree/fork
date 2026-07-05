@@ -416,12 +416,14 @@ final class ForkAppModel: ObservableObject {
     func publish() {
         do {
             let draft = try persistDraft()
-            let documentIdentity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
-            authorPeer.useDocumentIdentity(documentIdentity)
+            let documents = try publicationDocuments(currentDraft: draft)
+            guard let homeDocument = documents.first(where: { $0.draftID == draft.id })?.publication.identity.address else {
+                throw ForkError.missingPublicationDocuments
+            }
             let now = Date()
-            try authorPeer.publishHomePage(
-                title: draft.title,
-                markdown: draft.markdown,
+            try authorPeer.publishDocuments(
+                documents.map { $0.publication },
+                homeDocument: homeDocument,
                 createdAt: now
             )
             guard let authorAddress else {
@@ -591,6 +593,36 @@ final class ForkAppModel: ObservableObject {
 
     private func refreshDrafts() throws {
         drafts = try draftProvider.loadDrafts()
+    }
+
+    private func publicationDocuments(currentDraft: DraftDocument) throws -> [(draftID: String, publication: LocalDocumentPublication)] {
+        let storedDrafts = try draftProvider.loadDrafts()
+        let publicationDrafts = mergedDrafts(storedDrafts, replacingWith: currentDraft)
+        return try publicationDrafts.map { draft in
+            let identity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
+            return (
+                draftID: draft.id,
+                publication: LocalDocumentPublication(
+                    identity: identity,
+                    title: draft.title,
+                    markdown: draft.markdown
+                )
+            )
+        }
+    }
+
+    private func mergedDrafts(_ drafts: [DraftDocument], replacingWith currentDraft: DraftDocument) -> [DraftDocument] {
+        var merged = drafts.filter { $0.id != currentDraft.id }
+        merged.append(currentDraft)
+        return merged.sorted { lhs, rhs in
+            if lhs.id == "home" {
+                return true
+            }
+            if rhs.id == "home" {
+                return false
+            }
+            return lhs.updatedAt > rhs.updatedAt
+        }
     }
 
     private func show(_ renderedPage: RenderedPage, displayedAddress: String, addHistory: Bool) {

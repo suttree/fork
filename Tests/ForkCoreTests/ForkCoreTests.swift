@@ -310,6 +310,66 @@ struct ForkCoreTests {
         #expect(cachedPage.markdown.contains("Carried as signed records."))
     }
 
+    @Test("author manifest can publish multiple documents")
+    func authorManifestPublishesMultipleDocuments() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorPeer = LocalPeer(name: "Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        let homeIdentity = ForkIdentity(role: .document)
+        let aboutIdentity = ForkIdentity(role: .document)
+
+        try authorPeer.publishDocuments(
+            [
+                LocalDocumentPublication(
+                    identity: homeIdentity,
+                    title: "Home",
+                    markdown: "# Home\n\nWelcome."
+                ),
+                LocalDocumentPublication(
+                    identity: aboutIdentity,
+                    title: "About",
+                    markdown: "# About\n\nA second page."
+                )
+            ],
+            homeDocument: homeIdentity.address,
+            createdAt: now
+        )
+
+        let bundle = try authorPeer.exportAuthorBundle(authorAddress)
+        try readerPeer.importAuthorBundle(
+            bundle,
+            expectedAuthor: authorAddress,
+            cachedAt: now
+        )
+        let homePage = try readerPeer.renderAuthor(authorAddress)
+        let aboutPage = try readerPeer.render(aboutIdentity.address)
+
+        #expect(bundle.manifest.payload.homeDocument == homeIdentity.address.rawValue)
+        #expect(bundle.manifest.payload.documents.map(\.address) == [
+            homeIdentity.address.rawValue,
+            aboutIdentity.address.rawValue
+        ])
+        #expect(bundle.documents.count == 2)
+        #expect(homePage.documentAddress == homeIdentity.address)
+        #expect(aboutPage.documentAddress == aboutIdentity.address)
+        #expect(aboutPage.source == .cache(now))
+        #expect(aboutPage.markdown.contains("A second page."))
+    }
+
+    @Test("publishing an empty document list is refused")
+    func publishingEmptyDocumentListIsRefused() throws {
+        let authorPeer = LocalPeer(name: "Author")
+        _ = authorPeer.createAuthorIdentity()
+
+        #expect(throws: ForkError.missingPublicationDocuments) {
+            try authorPeer.publishDocuments(
+                [],
+                homeDocument: ForkIdentity(role: .document).address
+            )
+        }
+    }
+
     @Test("author bundle wire data round trips")
     func authorBundleWireDataRoundTrips() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)

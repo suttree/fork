@@ -27,6 +27,18 @@ public struct RenderedPage: Equatable, Sendable {
     }
 }
 
+public struct LocalDocumentPublication: Sendable {
+    public var identity: ForkIdentity
+    public var title: String
+    public var markdown: String
+
+    public init(identity: ForkIdentity, title: String, markdown: String) {
+        self.identity = identity
+        self.title = title
+        self.markdown = markdown
+    }
+}
+
 public final class LocalPeer: @unchecked Sendable {
     public let name: String
     public private(set) var authorIdentity: ForkIdentity?
@@ -74,32 +86,80 @@ public final class LocalPeer: @unchecked Sendable {
         let documentIdentity = documentIdentity ?? ForkIdentity(role: .document)
         self.documentIdentity = documentIdentity
 
-        let documentPayload = DocumentRecordPayload(
-            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
-            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
-            title: title,
-            markdown: markdown,
-            version: nextDocumentVersion(for: documentIdentity.address),
-            previous: nil,
+        let result = try publishDocuments(
+            [
+                LocalDocumentPublication(
+                    identity: documentIdentity,
+                    title: title,
+                    markdown: markdown
+                )
+            ],
+            homeDocument: documentIdentity.address,
             createdAt: createdAt
         )
-        let signedDocument = try ForkRecordSigner.signDocument(
-            payload: documentPayload,
-            with: documentIdentity
-        )
+
+        guard let document = result.documents.first else {
+            throw ForkError.missingPublicationDocuments
+        }
+
+        return (result.manifest, document)
+    }
+
+    @discardableResult
+    public func publishDocuments(
+        _ documents: [LocalDocumentPublication],
+        homeDocument: ForkAddress,
+        createdAt: Date = Date()
+    ) throws -> (manifest: SignedAuthorManifest, documents: [SignedDocumentRecord]) {
+        guard !documents.isEmpty else {
+            throw ForkError.missingPublicationDocuments
+        }
+        guard homeDocument.kind == .document else {
+            throw ForkError.invalidAddress(homeDocument.rawValue)
+        }
+        for document in documents where document.identity.address.kind != .document {
+            throw ForkError.invalidAddress(document.identity.address.rawValue)
+        }
+
+        let authorIdentity = authorIdentity ?? ForkIdentity(role: .author)
+        self.authorIdentity = authorIdentity
+
+        guard let homePublication = documents.first(where: { $0.identity.address == homeDocument }) else {
+            throw ForkError.missingDocument(homeDocument)
+        }
+        self.documentIdentity = homePublication.identity
+
+        let signedDocuments = try documents.map { document in
+            let documentIdentity = document.identity
+            let documentPayload = DocumentRecordPayload(
+                documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+                authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+                title: document.title,
+                markdown: document.markdown,
+                version: nextDocumentVersion(for: documentIdentity.address),
+                previous: nil,
+                createdAt: createdAt
+            )
+            return try ForkRecordSigner.signDocument(
+                payload: documentPayload,
+                with: documentIdentity
+            )
+        }
+
+        let manifestDocuments = documents.map { document in
+            AuthorManifestDocument(
+                address: document.identity.address.rawValue,
+                role: document.identity.address == homeDocument ? "home" : "page",
+                title: document.title
+            )
+        }
 
         let manifestPayload = AuthorManifestPayload(
             authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
             version: nextManifestVersion(for: authorIdentity.address),
             previous: nil,
-            homeDocument: documentIdentity.address.rawValue,
-            documents: [
-                AuthorManifestDocument(
-                    address: documentIdentity.address.rawValue,
-                    role: "home",
-                    title: title
-                )
-            ],
+            homeDocument: homeDocument.rawValue,
+            documents: manifestDocuments,
             createdAt: createdAt
         )
         let signedManifest = try ForkRecordSigner.signManifest(
@@ -108,8 +168,10 @@ public final class LocalPeer: @unchecked Sendable {
         )
 
         try accept(manifest: signedManifest, cachedAt: createdAt)
-        try accept(document: signedDocument, cachedAt: createdAt)
-        return (signedManifest, signedDocument)
+        for signedDocument in signedDocuments {
+            try accept(document: signedDocument, cachedAt: createdAt)
+        }
+        return (signedManifest, signedDocuments)
     }
 
     public func fetchAuthor(_ address: ForkAddress, from peer: LocalPeer, at fetchedAt: Date = Date()) throws {
