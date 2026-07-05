@@ -182,7 +182,7 @@ struct ForkShell: View {
 
                             if draft.id != "home" {
                                 Button {
-                                    model.deleteDraft(draft.id)
+                                    model.requestDraftDeletion(draft.id)
                                 } label: {
                                     Label("Delete Page", systemImage: "trash")
                                 }
@@ -250,6 +250,20 @@ struct ForkShell: View {
             }
         }
         .frame(minWidth: 920, minHeight: 620)
+        .confirmationDialog(
+            "Delete Page?",
+            isPresented: $model.isConfirmingDraftDeletion,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Page", role: .destructive) {
+                model.confirmDraftDeletion()
+            }
+            Button("Cancel", role: .cancel) {
+                model.cancelDraftDeletion()
+            }
+        } message: {
+            Text("This removes \(model.pendingDraftDeletionTitle) from local drafts. Publish afterward to update your signed place.")
+        }
     }
 }
 
@@ -715,6 +729,8 @@ final class ForkAppModel: ObservableObject {
     @Published var canGoForward = false
     @Published var samplePlaceAddress: String?
     @Published var samplePeerOnline = false
+    @Published var isConfirmingDraftDeletion = false
+    @Published var pendingDraftDeletionTitle = "this page"
 
     private var identityProvider: StoredIdentityProvider
     private var draftProvider: StoredDraftProvider
@@ -730,6 +746,7 @@ final class ForkAppModel: ObservableObject {
     private var sampleAddress: ForkAddress?
     private var history: [String] = []
     private var historyIndex: Int?
+    private var pendingDraftDeletionID: String?
 
     init() {
         do {
@@ -823,7 +840,32 @@ final class ForkAppModel: ObservableObject {
         }
     }
 
-    func deleteDraft(_ id: String) {
+    func requestDraftDeletion(_ id: String) {
+        guard id != "home" else {
+            statusMessage = "The home page cannot be deleted."
+            return
+        }
+        pendingDraftDeletionID = id
+        pendingDraftDeletionTitle = drafts.first { $0.id == id }?.title ?? "this page"
+        isConfirmingDraftDeletion = true
+    }
+
+    func confirmDraftDeletion() {
+        guard let id = pendingDraftDeletionID else {
+            isConfirmingDraftDeletion = false
+            return
+        }
+        deleteDraft(id)
+        cancelDraftDeletion()
+    }
+
+    func cancelDraftDeletion() {
+        pendingDraftDeletionID = nil
+        pendingDraftDeletionTitle = "this page"
+        isConfirmingDraftDeletion = false
+    }
+
+    private func deleteDraft(_ id: String) {
         do {
             if id != selectedDraftID {
                 _ = try persistDraft()
