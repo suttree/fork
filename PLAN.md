@@ -121,6 +121,7 @@ Notes:
 - The demo home draft now loads from a draft store when one exists, otherwise it creates the default Markdown draft.
 - The prototype editor can now save edits back to the draft store and publish a signed record from the current draft.
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
+- The writer shows the selected draft's stable document address with a copy control.
 - Non-home drafts can now be deleted from the writer before the next signed publish.
 - Publishing now signs document records for every local draft and lists them in the author manifest, with the selected draft as the home document.
 - Republishing after removing a page exports only the documents listed by the latest author manifest.

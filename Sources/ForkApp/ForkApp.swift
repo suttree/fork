@@ -215,6 +215,7 @@ struct ForkShell: View {
                     WriterPreview(
                         title: $model.draftTitle,
                         markdown: $model.draftMarkdown,
+                        documentAddress: model.draftDocumentAddress,
                         status: model.statusMessage,
                         saveDraft: model.saveDraft,
                         publish: model.publish
@@ -576,6 +577,7 @@ struct AddressCopyRow: View {
 struct WriterPreview: View {
     @Binding var title: String
     @Binding var markdown: String
+    let documentAddress: String
     let status: String
     let saveDraft: () -> Void
     let publish: () -> Void
@@ -588,6 +590,13 @@ struct WriterPreview: View {
 
             TextField("Title", text: $title)
                 .textFieldStyle(.roundedBorder)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Document Address")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                DraftAddressCopyRow(address: documentAddress)
+            }
 
             TextEditor(text: $markdown)
                 .font(.system(.body, design: .monospaced))
@@ -615,10 +624,39 @@ struct WriterPreview: View {
     }
 }
 
+struct DraftAddressCopyRow: View {
+    let address: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(address.isEmpty ? "Unavailable" : address)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .textSelection(.enabled)
+
+            Button {
+                copyToPasteboard(address)
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+            .labelStyle(.iconOnly)
+            .help("Copy document address")
+            .disabled(address.isEmpty)
+        }
+    }
+
+    private func copyToPasteboard(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+}
+
 @MainActor
 final class ForkAppModel: ObservableObject {
     @Published var draftTitle = ""
     @Published var draftMarkdown = ""
+    @Published var draftDocumentAddress = ""
     @Published var page: RenderedPage?
     @Published var statusMessage = "Ready."
     @Published var errorMessage: String?
@@ -949,10 +987,21 @@ final class ForkAppModel: ObservableObject {
         selectedDraftID = draft.id
         draftTitle = draft.title
         draftMarkdown = draft.markdown
+        refreshDraftDocumentAddress()
     }
 
     private func refreshDrafts() throws {
         drafts = try draftProvider.loadDrafts()
+    }
+
+    private func refreshDraftDocumentAddress() {
+        do {
+            let identity = try identityProvider.loadOrCreateDocumentIdentity(account: selectedDraftID)
+            draftDocumentAddress = identity.address.rawValue
+        } catch {
+            draftDocumentAddress = ""
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func publicationDocuments(currentDraft: DraftDocument) throws -> [(draftID: String, publication: LocalDocumentPublication)] {
