@@ -591,6 +591,15 @@ struct AddressBar: View {
                 Button(action: visit) {
                     Label("Visit", systemImage: "arrow.right.circle")
                 }
+
+                Button {
+                    copyToPasteboard(address)
+                } label: {
+                    Label("Copy Address", systemImage: "doc.on.doc")
+                }
+                .labelStyle(.iconOnly)
+                .help("Copy current address")
+                .disabled(address.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
 
             HStack(spacing: 8) {
@@ -610,6 +619,11 @@ struct AddressBar: View {
             }
         }
         .padding(12)
+    }
+
+    private func copyToPasteboard(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
 }
 
