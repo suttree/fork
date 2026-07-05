@@ -69,6 +69,7 @@ Status: First in-memory vertical slice implemented.
 - Added a sample-author online/offline toggle to demonstrate verified cached reading in the app.
 - The Read sidebar now labels the local author place and sample author online/cache-only state.
 - The Read sidebar now keeps local and sample author addresses available as hover help.
+- Sample author identities now stay in memory instead of causing extra Keychain prompts on startup.
 - Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
 - The app now restores the last visited Fork address on launch when it can be rendered.
 - Browsing history now persists across launches as verified Fork addresses.
@@ -164,6 +165,7 @@ Notes:
 - The writer now quietly autosaves local title and Markdown edits after a short pause.
 - The reader now calls out when it is showing the last signed version while unpublished local edits are open in the writer.
 - The writer has an edit/preview switch for local Markdown drafts.
+- The reader now renders Markdown as blocks so headings and paragraphs keep their structure.
 - Draft titles are now trimmed before saving, with blank titles falling back to `Untitled Page`.
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
 - The writer exposes Add Page from the writing surface, so authors can add pages without hunting through the sidebar.

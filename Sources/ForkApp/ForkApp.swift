@@ -476,14 +476,15 @@ private enum ForkSamplePlace {
     static let fieldNotesAccount = "sample-field-notes"
     static let aboutAccount = "sample-about"
     static let publishedAt = Date(timeIntervalSince1970: 1_783_078_400)
+    private static let identityProvider = StoredIdentityProvider(store: MemoryIdentityStore())
 
-    static func authorIdentity(using provider: StoredIdentityProvider) throws -> ForkIdentity {
-        try provider.loadOrCreateAuthorIdentity(account: authorAccount)
+    static func authorIdentity() throws -> ForkIdentity {
+        try identityProvider.loadOrCreateAuthorIdentity(account: authorAccount)
     }
 
-    static func publications(using provider: StoredIdentityProvider) throws -> (homeDocument: ForkAddress, documents: [LocalDocumentPublication]) {
-        let fieldNotes = try provider.loadOrCreateDocumentIdentity(account: fieldNotesAccount)
-        let about = try provider.loadOrCreateDocumentIdentity(account: aboutAccount)
+    static func publications() throws -> (homeDocument: ForkAddress, documents: [LocalDocumentPublication]) {
+        let fieldNotes = try identityProvider.loadOrCreateDocumentIdentity(account: fieldNotesAccount)
+        let about = try identityProvider.loadOrCreateDocumentIdentity(account: aboutAccount)
         return (
             homeDocument: fieldNotes.address,
             documents: [
@@ -720,10 +721,22 @@ struct ReaderView: View {
 
                 Divider().overlay(theme.divider)
 
-                Text(renderedMarkdown)
-                    .font(.body)
-                    .foregroundStyle(theme.primaryText)
-                    .textSelection(.enabled)
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(markdownBlocks) { block in
+                        switch block.kind {
+                        case .heading(let level, let text):
+                            Text(inlineMarkdown(text))
+                                .font(headingFont(for: level))
+                                .fontWeight(.semibold)
+                                .foregroundStyle(theme.primaryText)
+                        case .paragraph(let text):
+                            Text(inlineMarkdown(text))
+                                .font(.body)
+                                .foregroundStyle(theme.primaryText)
+                        }
+                    }
+                }
+                .textSelection(.enabled)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Author")
@@ -764,8 +777,25 @@ struct ReaderView: View {
         .environment(\.openURL, OpenURLAction(handler: openURL))
     }
 
-    private var renderedMarkdown: AttributedString {
-        (try? AttributedString(markdown: page.markdown)) ?? AttributedString(page.markdown)
+    private var markdownBlocks: [MarkdownBlock] {
+        MarkdownBlock.parse(page.markdown)
+    }
+
+    private func inlineMarkdown(_ markdown: String) -> AttributedString {
+        (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
+    }
+
+    private func headingFont(for level: Int) -> Font {
+        switch level {
+        case 1:
+            return .system(size: 30, weight: .semibold)
+        case 2:
+            return .title2
+        case 3:
+            return .title3
+        default:
+            return .headline
+        }
     }
 
     private var statusText: String {
@@ -791,6 +821,63 @@ struct ReaderView: View {
             return "Document version \(page.version), replacing \(previous.prefix(12))..."
         }
         return "Document version \(page.version), first signed version."
+    }
+}
+
+private struct MarkdownBlock: Identifiable, Equatable {
+    enum Kind: Equatable {
+        case heading(level: Int, text: String)
+        case paragraph(String)
+    }
+
+    let id: Int
+    let kind: Kind
+
+    static func parse(_ markdown: String) -> [MarkdownBlock] {
+        var blocks: [MarkdownBlock] = []
+        var paragraphLines: [String] = []
+
+        func flushParagraph() {
+            let paragraph = paragraphLines
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+            if !paragraph.isEmpty {
+                blocks.append(MarkdownBlock(id: blocks.count, kind: .paragraph(paragraph)))
+            }
+            paragraphLines = []
+        }
+
+        for line in markdown.components(separatedBy: .newlines) {
+            if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                flushParagraph()
+                continue
+            }
+
+            if let heading = heading(in: line) {
+                flushParagraph()
+                blocks.append(MarkdownBlock(id: blocks.count, kind: .heading(level: heading.level, text: heading.text)))
+            } else {
+                paragraphLines.append(line)
+            }
+        }
+
+        flushParagraph()
+        return blocks
+    }
+
+    private static func heading(in line: String) -> (level: Int, text: String)? {
+        let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+        let hashes = trimmedLine.prefix(while: { $0 == "#" }).count
+        guard (1...6).contains(hashes),
+              trimmedLine.dropFirst(hashes).first == " " else {
+            return nil
+        }
+
+        let text = trimmedLine
+            .dropFirst(hashes)
+            .trimmingCharacters(in: .whitespaces)
+        return text.isEmpty ? nil : (hashes, text)
     }
 }
 
@@ -1046,6 +1133,8 @@ final class ForkAppModel: ObservableObject {
     private var pendingDraftDeletionID: String?
     private var currentPlaceHomeAddress: String?
     private var currentDisplayedAddress: String?
+    private var cachedAuthorIdentities: [String: ForkIdentity] = [:]
+    private var cachedDocumentIdentities: [String: ForkIdentity] = [:]
 
     init() {
         do {
@@ -1280,7 +1369,7 @@ final class ForkAppModel: ObservableObject {
         }
 
         do {
-            let identity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
+            let identity = try loadDocumentIdentity(account: draft.id)
             let link = "[\(markdownLinkTitle(draft.title))](\(identity.address.rawValue))"
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(link, forType: .string)
@@ -1452,8 +1541,8 @@ final class ForkAppModel: ObservableObject {
     }
 
     private func load() throws {
-        let authorIdentity = try identityProvider.loadOrCreateAuthorIdentity()
-        let documentIdentity = try identityProvider.loadOrCreateDocumentIdentity(account: selectedDraftID)
+        let authorIdentity = try loadAuthorIdentity()
+        let documentIdentity = try loadDocumentIdentity(account: selectedDraftID)
         authorPeer.useAuthorIdentity(authorIdentity)
         authorPeer.useDocumentIdentity(documentIdentity)
         authorAddress = authorIdentity.address
@@ -1480,12 +1569,12 @@ final class ForkAppModel: ObservableObject {
     }
 
     private func startSampleTransport() throws {
-        let sampleIdentity = try ForkSamplePlace.authorIdentity(using: identityProvider)
+        let sampleIdentity = try ForkSamplePlace.authorIdentity()
         samplePeer.useAuthorIdentity(sampleIdentity)
         sampleAddress = sampleIdentity.address
         samplePlaceAddress = sampleIdentity.address.rawValue
 
-        let publication = try ForkSamplePlace.publications(using: identityProvider)
+        let publication = try ForkSamplePlace.publications()
         try samplePeer.publishDocuments(
             publication.documents,
             homeDocument: publication.homeDocument,
@@ -1560,7 +1649,7 @@ final class ForkAppModel: ObservableObject {
 
     private func refreshDraftDocumentAddress() {
         do {
-            let identity = try identityProvider.loadOrCreateDocumentIdentity(account: selectedDraftID)
+            let identity = try loadDocumentIdentity(account: selectedDraftID)
             draftDocumentAddress = identity.address.rawValue
             draftDocumentAddresses[selectedDraftID] = identity.address.rawValue
         } catch {
@@ -1573,7 +1662,7 @@ final class ForkAppModel: ObservableObject {
         var addresses: [String: String] = [:]
         for draft in drafts {
             do {
-                let identity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
+                let identity = try loadDocumentIdentity(account: draft.id)
                 addresses[draft.id] = identity.address.rawValue
             } catch {
                 errorMessage = error.localizedDescription
@@ -1586,7 +1675,7 @@ final class ForkAppModel: ObservableObject {
         let storedDrafts = try draftProvider.loadDrafts()
         let publicationDrafts = mergedDrafts(storedDrafts, replacingWith: currentDraft)
         return try publicationDrafts.map { draft in
-            let identity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
+            let identity = try loadDocumentIdentity(account: draft.id)
             return (
                 draftID: draft.id,
                 publication: LocalDocumentPublication(
@@ -1749,7 +1838,7 @@ final class ForkAppModel: ObservableObject {
     private func selectedDraftHasUnpublishedChanges() -> Bool {
         guard let page,
               page.authorAddress == authorAddress,
-              let selectedDraftAddress = try? identityProvider.loadOrCreateDocumentIdentity(account: selectedDraftID).address,
+              let selectedDraftAddress = try? loadDocumentIdentity(account: selectedDraftID).address,
               selectedDraftAddress == page.documentAddress else {
             return false
         }
@@ -1764,10 +1853,28 @@ final class ForkAppModel: ObservableObject {
         return draft.title != page.title || draft.markdown != page.markdown
     }
 
+    private func loadAuthorIdentity(account: String = "author") throws -> ForkIdentity {
+        if let identity = cachedAuthorIdentities[account] {
+            return identity
+        }
+        let identity = try identityProvider.loadOrCreateAuthorIdentity(account: account)
+        cachedAuthorIdentities[account] = identity
+        return identity
+    }
+
+    private func loadDocumentIdentity(account: String) throws -> ForkIdentity {
+        if let identity = cachedDocumentIdentities[account] {
+            return identity
+        }
+        let identity = try identityProvider.loadOrCreateDocumentIdentity(account: account)
+        cachedDocumentIdentities[account] = identity
+        return identity
+    }
+
     private func localDraft(for documentAddress: ForkAddress) throws -> DraftDocument? {
         let localDrafts = try draftProvider.loadDrafts()
         for draft in localDrafts {
-            let identity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
+            let identity = try loadDocumentIdentity(account: draft.id)
             if identity.address == documentAddress {
                 return draft
             }
