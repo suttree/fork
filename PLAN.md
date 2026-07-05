@@ -237,7 +237,7 @@ Notes:
 - Editor drafts now save automatically as edits are made, without a visible Save Draft button.
 - Startup now avoids eager republishing and eager document-key lookups for every draft, reducing repeated Keychain prompts.
 - Startup writer sync now uses known public document addresses from signed manifests instead of opening draft private keys.
-- App typography now uses a larger readable scale inspired by duncangough.com, with 42px H1s and 25px body text for Markdown reading and writing.
+- App typography now uses a larger readable scale inspired by duncangough.com, with 41px H1s and 24px body text for Markdown reading and writing.
 
 ## Milestone 4: Signed Records
 

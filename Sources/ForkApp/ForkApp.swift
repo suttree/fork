@@ -68,14 +68,14 @@ private enum ForkWorkspaceMode: String, CaseIterable, Identifiable {
 }
 
 private enum ForkTypography {
-    static let h1: CGFloat = 42
-    static let h2: CGFloat = 36
-    static let h3: CGFloat = 30
-    static let body: CGFloat = 25
+    static let h1: CGFloat = 41
+    static let h2: CGFloat = 35
+    static let h3: CGFloat = 29
+    static let body: CGFloat = 24
     static let bodyLineSpacing: CGFloat = 6
-    static let ui: CGFloat = 18
-    static let uiSmall: CGFloat = 15
-    static let mono: CGFloat = 21
+    static let ui: CGFloat = 17
+    static let uiSmall: CGFloat = 14
+    static let mono: CGFloat = 20
 }
 
 struct ForkShell: View {
