@@ -23,6 +23,7 @@ Status: First in-memory vertical slice implemented.
 - Added a Swift Package with a `ForkCore` library and a small SwiftUI `ForkApp`.
 - Added key-derived author and document addresses using CryptoKit signing keys.
 - Added signed author manifests and signed document records with stable JSON encoding.
+- Signed record versions must now be positive.
 - Added previous-record hashes so signed updates point back to the records they replace.
 - First signed records now reject unexpected previous hashes.
 - Versioned signed records now reject history resets where later versions omit previous hashes.
@@ -185,6 +186,7 @@ Status: Started
 - Sign author manifests.
 - Verify signatures before rendering.
 - Refuse to render invalid records.
+- Reject non-positive signed record versions.
 - Link signed updates to the previous signed record hash.
 - Reject first record versions that claim a previous signed record hash.
 - Reject later record versions that omit the previous signed record hash.

@@ -1406,6 +1406,33 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("document record versions must be positive")
+    func documentRecordVersionsMustBePositive() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let documentIdentity = ForkIdentity(role: .document)
+        let payload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Zero",
+            markdown: "# Zero",
+            version: 0,
+            previous: nil,
+            createdAt: now
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(
+                document: try ForkRecordSigner.signDocument(payload: payload, with: documentIdentity),
+                cachedAt: now
+            )
+        }
+        #expect(throws: ForkError.missingDocument(documentIdentity.address)) {
+            try peer.render(documentIdentity.address)
+        }
+    }
+
     @Test("same-version manifests do not replace cached manifests")
     func sameVersionManifestsDoNotReplaceCachedManifests() throws {
         let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
@@ -1610,6 +1637,38 @@ struct ForkCoreTests {
                     address: homeIdentity.address.rawValue,
                     role: "home",
                     title: "First"
+                )
+            ],
+            createdAt: now
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(
+                manifest: try ForkRecordSigner.signManifest(payload: payload, with: authorIdentity),
+                cachedAt: now
+            )
+        }
+        #expect(throws: ForkError.missingManifest(authorIdentity.address)) {
+            try peer.renderAuthor(authorIdentity.address)
+        }
+    }
+
+    @Test("manifest versions must be positive")
+    func manifestVersionsMustBePositive() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let homeIdentity = ForkIdentity(role: .document)
+        let payload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 0,
+            previous: nil,
+            homeDocument: homeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "home",
+                    title: "Zero"
                 )
             ],
             createdAt: now
