@@ -141,7 +141,7 @@ Notes:
 - The demo home document now loads or creates its document identity through the same app identity provider, so its `fork://doc/...` address is stable across launches.
 - The demo home draft now loads from a draft store when one exists, otherwise it creates the default Markdown draft.
 - The prototype editor can now save edits back to the draft store and publish a signed record from the current draft.
-- The writer now autosaves local title and Markdown edits after a short pause.
+- The writer now quietly autosaves local title and Markdown edits after a short pause.
 - The writer has an edit/preview switch for local Markdown drafts.
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
 - The writer exposes Add Page from the writing surface, so authors can add pages without hunting through the sidebar.

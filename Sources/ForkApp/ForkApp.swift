@@ -715,6 +715,7 @@ struct WriterPreview: View {
     let publish: () -> Void
     @State private var mode: Mode = .edit
     @State private var autosaveTask: Task<Void, Never>?
+    @State private var hasPendingAutosave = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -792,7 +793,7 @@ struct WriterPreview: View {
         .padding(24)
         .onDisappear {
             autosaveTask?.cancel()
-            autosaveDraft()
+            flushAutosaveIfNeeded()
         }
     }
 
@@ -801,6 +802,7 @@ struct WriterPreview: View {
     }
 
     private func scheduleAutosave() {
+        hasPendingAutosave = true
         autosaveTask?.cancel()
         autosaveTask = Task {
             try? await Task.sleep(nanoseconds: 800_000_000)
@@ -808,9 +810,17 @@ struct WriterPreview: View {
                 return
             }
             await MainActor.run {
-                autosaveDraft()
+                flushAutosaveIfNeeded()
             }
         }
+    }
+
+    private func flushAutosaveIfNeeded() {
+        guard hasPendingAutosave else {
+            return
+        }
+        hasPendingAutosave = false
+        autosaveDraft()
     }
 }
 
@@ -928,7 +938,6 @@ final class ForkAppModel: ObservableObject {
         do {
             _ = try persistDraft()
             try refreshDrafts()
-            statusMessage = "Page autosaved."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Page could not be autosaved."
