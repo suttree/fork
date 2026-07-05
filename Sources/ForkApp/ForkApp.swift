@@ -155,7 +155,7 @@ struct ForkShell: View {
 
                 Section("Write") {
                     Button(action: model.createDraft) {
-                        Label("New Page", systemImage: "plus")
+                        Label("Add Page", systemImage: "plus")
                     }
 
                     ForEach(model.drafts) { draft in
@@ -217,6 +217,7 @@ struct ForkShell: View {
                         markdown: $model.draftMarkdown,
                         documentAddress: model.draftDocumentAddress,
                         status: model.statusMessage,
+                        createPage: model.createDraft,
                         saveDraft: model.saveDraft,
                         publish: model.publish
                     )
@@ -637,6 +638,7 @@ struct WriterPreview: View {
     @Binding var markdown: String
     let documentAddress: String
     let status: String
+    let createPage: () -> Void
     let saveDraft: () -> Void
     let publish: () -> Void
     @State private var mode: Mode = .edit
@@ -649,6 +651,10 @@ struct WriterPreview: View {
                     .fontWeight(.semibold)
 
                 Spacer()
+
+                Button(action: createPage) {
+                    Label("Add Page", systemImage: "plus")
+                }
 
                 Picker("Writer Mode", selection: $mode) {
                     ForEach(Mode.allCases) { mode in
@@ -857,10 +863,10 @@ final class ForkAppModel: ObservableObject {
             let draft = try draftProvider.createDraft()
             try refreshDrafts()
             try loadDraft(draft.id)
-            statusMessage = "Created draft."
+            statusMessage = "Added page to your place."
         } catch {
             errorMessage = error.localizedDescription
-            statusMessage = "Draft could not be created."
+            statusMessage = "Page could not be added."
         }
     }
 
@@ -868,10 +874,10 @@ final class ForkAppModel: ObservableObject {
         do {
             _ = try persistDraft()
             try loadDraft(id)
-            statusMessage = "Editing draft."
+            statusMessage = "Editing page."
         } catch {
             errorMessage = error.localizedDescription
-            statusMessage = "Draft could not be opened."
+            statusMessage = "Page could not be opened."
         }
     }
 

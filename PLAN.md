@@ -32,6 +32,7 @@ Status: First in-memory vertical slice implemented.
 - Added a file-backed draft store and wired the demo publish path to it.
 - Wired the prototype editor to save drafts and publish signed records from the current draft.
 - Added a draft list in the writer, with new-page creation and selection.
+- Added a first-class Add Page action in the writer so authors can grow a place from the writing flow.
 - Added draft deletion for non-home pages in the writer.
 - Added multi-document publishing so the signed author manifest can list every local draft.
 - Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.
@@ -59,7 +60,7 @@ Status: First in-memory vertical slice implemented.
 
 Still not done:
 
-- The writer can create, select, edit, and delete local pages, but it still needs a more polished document manager that makes "add a page to my place" feel obvious from the home page flow.
+- The writer can create, select, edit, and delete local pages, but it still needs a more polished document manager for page roles and ordering.
 - Reader themes should become more colorful and expressive while remaining user-selected, not author-forced.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
@@ -126,13 +127,14 @@ Notes:
 - The prototype editor can now save edits back to the draft store and publish a signed record from the current draft.
 - The writer has an edit/preview switch for local Markdown drafts.
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
+- The writer exposes Add Page from the writing surface, so authors can add pages without hunting through the sidebar.
 - The writer shows the selected draft's stable document address with a copy control.
 - Non-home drafts can now be deleted from the writer, with confirmation, before the next signed publish.
 - Publishing now signs document records for every local draft and lists them in the author manifest, with the selected draft as the home document.
 - Republishing after removing a page exports only the documents listed by the latest author manifest.
 - Cached document addresses can now be rendered directly as verified deep links.
 - The sidebar can now show and visit the pages listed by the current verified author manifest.
-- Next: make adding pages a first-class author action from the writer/home-place UI, with clearer page titles, page roles, and navigation back to the home document.
+- Next: improve page roles, ordering, and navigation back to the home document.
 
 ## Milestone 4: Signed Records
 
