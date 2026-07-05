@@ -172,6 +172,7 @@ struct ForkShell: View {
                                 .buttonStyle(.borderless)
                                 .help("Delete bookmark")
                             }
+                            .help(bookmark.address)
                         }
                     }
                 }

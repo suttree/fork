@@ -320,6 +320,7 @@ Notes:
 - Bookmark nicknames are now trimmed before saving, with blank nicknames falling back to page titles.
 - Bookmark saves now immediately show the normalized local display title in the nickname field.
 - Bookmark rows show whether a saved address is an author place or document page.
+- Bookmark rows keep the raw Fork address available as hover help.
 - Empty bookmarks now have a quiet visible state.
 - Bookmark rows can now delete saved entries.
 - Bookmark deletion now refreshes the nickname field from the displayed page address, not unsent address edits.
