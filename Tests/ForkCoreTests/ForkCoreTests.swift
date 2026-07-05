@@ -799,6 +799,83 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("direct manifest accept rejects duplicate page addresses")
+    func directManifestAcceptRejectsDuplicatePageAddresses() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let homeIdentity = ForkIdentity(role: .document)
+        let manifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: homeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "home",
+                    title: "Home"
+                ),
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "home",
+                    title: "Home Again"
+                )
+            ],
+            createdAt: now
+        )
+        let manifest = try ForkRecordSigner.signManifest(
+            payload: manifestPayload,
+            with: authorIdentity
+        )
+        let readerPeer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try readerPeer.accept(manifest: manifest, cachedAt: now)
+        }
+        #expect(throws: ForkError.missingManifest(authorIdentity.address)) {
+            try readerPeer.renderAuthor(authorIdentity.address)
+        }
+    }
+
+    @Test("direct manifest accept rejects mismatched page roles")
+    func directManifestAcceptRejectsMismatchedPageRoles() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let homeIdentity = ForkIdentity(role: .document)
+        let aboutIdentity = ForkIdentity(role: .document)
+        let manifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: homeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "page",
+                    title: "Home"
+                ),
+                AuthorManifestDocument(
+                    address: aboutIdentity.address.rawValue,
+                    role: "home",
+                    title: "About"
+                )
+            ],
+            createdAt: now
+        )
+        let manifest = try ForkRecordSigner.signManifest(
+            payload: manifestPayload,
+            with: authorIdentity
+        )
+        let readerPeer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try readerPeer.accept(manifest: manifest, cachedAt: now)
+        }
+        #expect(throws: ForkError.missingManifest(authorIdentity.address)) {
+            try readerPeer.renderAuthor(authorIdentity.address)
+        }
+    }
+
     @Test("direct manifest accept rejects malformed document addresses")
     func directManifestAcceptRejectsMalformedDocumentAddresses() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)

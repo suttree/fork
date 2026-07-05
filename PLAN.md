@@ -46,6 +46,7 @@ Status: First in-memory vertical slice implemented.
 - Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.
 - Incomplete author bundles are rejected before anything is cached.
 - Author bundles now reject manifests whose home page is not one of the listed document pages.
+- Manifests now reject duplicate document addresses and page roles that disagree with the home document.
 - Cache reload now restores only complete verified author bundles after restart.
 - Verified cached peers can re-serve author bundles to other readers.
 - Added a byte-oriented bundle codec and source protocol so transports can move encoded signed record bundles.
@@ -164,6 +165,7 @@ Status: Started
 - Link signed updates to the previous signed record hash.
 - Validate signed record type and key shape before accepting records into cache.
 - Validate document address key shapes listed by author manifests before accepting them into cache.
+- Validate that manifest page roles agree with the declared home document.
 
 Output:
 

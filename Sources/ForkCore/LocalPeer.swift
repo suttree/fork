@@ -397,11 +397,32 @@ public final class LocalPeer: @unchecked Sendable {
               manifestDocumentAddresses.contains(homeDocumentAddress) else {
             throw ForkError.invalidSignature
         }
+        let documentKeys = manifestDocumentAddresses.map(\.key)
+        guard Set(documentKeys).count == documentKeys.count else {
+            throw ForkError.invalidSignature
+        }
         guard manifestDocumentAddresses.allSatisfy(hasValidAddressPublicKey) else {
+            throw ForkError.invalidSignature
+        }
+        guard hasValidManifestRoles(
+            manifest.payload.documents,
+            addresses: manifestDocumentAddresses,
+            homeDocument: homeDocumentAddress
+        ) else {
             throw ForkError.invalidSignature
         }
 
         return manifestDocumentAddresses
+    }
+
+    private func hasValidManifestRoles(
+        _ documents: [AuthorManifestDocument],
+        addresses: [ForkAddress],
+        homeDocument: ForkAddress
+    ) -> Bool {
+        zip(documents, addresses).allSatisfy { document, address in
+            document.role == (address == homeDocument ? "home" : "page")
+        }
     }
 
     private func hasValidAddressPublicKey(_ address: ForkAddress) -> Bool {
