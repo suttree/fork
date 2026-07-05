@@ -313,6 +313,7 @@ Notes:
 - History rows now label author places and document pages instead of showing raw keys inline.
 - Bookmarks now support local nicknames.
 - Bookmarking can now save author and document addresses.
+- Bookmarking now uses the displayed page address even if the address field has unsent edits.
 - Bookmark saves now distinguish new bookmarks from updated nicknames.
 - Bookmark nicknames are now trimmed before saving, with blank nicknames falling back to page titles.
 - Bookmark saves now immediately show the normalized local display title in the nickname field.

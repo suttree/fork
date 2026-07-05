@@ -1025,6 +1025,7 @@ final class ForkAppModel: ObservableObject {
     private var historyIndex: Int?
     private var pendingDraftDeletionID: String?
     private var currentPlaceHomeAddress: String?
+    private var currentDisplayedAddress: String?
 
     init() {
         do {
@@ -1350,7 +1351,7 @@ final class ForkAppModel: ObservableObject {
         }
 
         do {
-            let address = try ForkAddress(addressText.trimmingCharacters(in: .whitespacesAndNewlines))
+            let address = try ForkAddress(currentDisplayedAddress ?? addressText.trimmingCharacters(in: .whitespacesAndNewlines))
             let bookmark = ForkBookmark(
                 address: address.rawValue,
                 title: page.title,
@@ -1590,6 +1591,7 @@ final class ForkAppModel: ObservableObject {
     private func show(_ renderedPage: RenderedPage, displayedAddress: String, addHistory: Bool) {
         page = renderedPage
         addressText = displayedAddress
+        currentDisplayedAddress = displayedAddress
         bookmarkLabel = bookmarkLabel(for: displayedAddress) ?? renderedPage.title
         UserDefaults.standard.set(displayedAddress, forKey: Self.lastAddressKey)
         updatePlacePages(for: renderedPage)
