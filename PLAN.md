@@ -80,6 +80,8 @@ Status: First in-memory vertical slice implemented.
 - Added a signed place page list in the sidebar from the current author manifest.
 - Place and writer sidebars now label home/current/page roles instead of leaning on raw addresses.
 - Sidebar rows now share a small title/subtitle/icon component for clearer ongoing UI polish.
+- Signed Markdown pages can now follow `fork://` links inside the app while refusing non-Fork links.
+- The sample place now includes an internal two-page trail for testing link-led browsing.
 - Added colorful local reader themes for Classic, Starship, and NvChad reading modes.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
@@ -301,6 +303,7 @@ Notes:
 - Back/forward navigation now revisits author places through the normal live-then-cache path.
 - The place page list now labels home and current pages clearly while keeping raw addresses available as help text.
 - The reader Home action now returns through the author place address, not just the home document deep link.
+- Reader Markdown links now keep `fork://` navigation inside Fork and refuse non-Fork URLs.
 
 ## First Technical Questions To Resolve
 

@@ -234,7 +234,11 @@ struct ForkShell: View {
                 Divider()
 
                 HStack(spacing: 0) {
-                    ReaderView(page: page, theme: model.readerTheme)
+                    ReaderView(
+                        page: page,
+                        theme: model.readerTheme,
+                        openURL: model.openMarkdownLink
+                    )
                         .frame(minWidth: 420)
 
                     Divider()
@@ -455,6 +459,8 @@ private enum ForkSamplePlace {
                     # Field Notes from Elsewhere
 
                     This page belongs to a second local Fork author. It is fetched over the same loopback transport, verified, cached, and then rendered like any other place.
+
+                    Follow the trail to [about this sample](\(about.address.rawValue)).
                     """
                 ),
                 LocalDocumentPublication(
@@ -464,6 +470,8 @@ private enum ForkSamplePlace {
                     # About This Sample
 
                     Fork addresses are intentionally strange. Browsing should lean on bookmarks, history, trails, and local names instead of nice domains.
+
+                    Return to [field notes](\(fieldNotes.address.rawValue)).
                     """
                 )
             ]
@@ -641,6 +649,7 @@ struct AddressBar: View {
 struct ReaderView: View {
     let page: RenderedPage
     let theme: ForkReaderTheme
+    let openURL: (URL) -> OpenURLAction.Result
 
     var body: some View {
         ScrollView {
@@ -697,6 +706,7 @@ struct ReaderView: View {
             .background(theme.pageBackground)
         }
         .background(theme.readerBackground)
+        .environment(\.openURL, OpenURLAction(handler: openURL))
     }
 
     private var renderedMarkdown: AttributedString {
@@ -1154,6 +1164,16 @@ final class ForkAppModel: ObservableObject {
 
     func visitAddress() {
         visit(addressText)
+    }
+
+    func openMarkdownLink(_ url: URL) -> OpenURLAction.Result {
+        guard url.scheme?.lowercased() == "fork" else {
+            statusMessage = "Fork opens Fork addresses only."
+            return .discarded
+        }
+
+        visit(url.absoluteString)
+        return .handled
     }
 
     func addressCopied() {
