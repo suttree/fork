@@ -387,13 +387,14 @@ struct ForkHistoryEntry: Identifiable, Equatable {
     let index: Int
     let address: String
     let title: String
+    let isCurrent: Bool
 
     var subtitle: String {
         switch addressKind {
         case .author:
-            "Author place"
+            isCurrent ? "Current author place" : "Author place"
         case .document:
-            "Document page"
+            isCurrent ? "Current document page" : "Document page"
         case nil:
             address
         }
@@ -1793,7 +1794,8 @@ final class ForkAppModel: ObservableObject {
                 id: "\(offset)-\(address)",
                 index: index,
                 address: address,
-                title: bookmarkLabel(for: address) ?? historyTitle(for: address)
+                title: bookmarkLabel(for: address) ?? historyTitle(for: address),
+                isCurrent: index == historyIndex
             )
         }
     }
