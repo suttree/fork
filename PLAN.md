@@ -36,6 +36,7 @@ Status: First in-memory vertical slice implemented.
 - Added multi-document publishing so the signed author manifest can list every local draft.
 - Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.
 - Incomplete author bundles are rejected before anything is cached.
+- Author bundles now reject manifests whose home page is not one of the listed document pages.
 - Verified cached peers can re-serve author bundles to other readers.
 - Added a byte-oriented bundle codec and source protocol so transports can move encoded signed record bundles.
 - Added a loopback HTTP transport that serves and fetches encoded author bundles over localhost.
