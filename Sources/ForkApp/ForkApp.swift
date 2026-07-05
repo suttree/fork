@@ -82,7 +82,8 @@ struct ForkShell: View {
                         SidebarRow(
                             title: "My Place",
                             subtitle: "Local author place",
-                            iconName: "doc.text"
+                            iconName: "doc.text",
+                            theme: model.readerTheme
                         )
                     }
                     .help(model.ownPlaceAddress ?? "Local author place")
@@ -94,7 +95,8 @@ struct ForkShell: View {
                             SidebarRow(
                                 title: "Sample Place",
                                 subtitle: model.samplePeerOnline ? "Online over localhost" : "Offline, cache only",
-                                iconName: "network"
+                                iconName: "network",
+                                theme: model.readerTheme
                             )
                         }
                         .help(model.samplePlaceAddress ?? "Sample author place")
@@ -119,7 +121,8 @@ struct ForkShell: View {
                                 SidebarRow(
                                     title: page.title,
                                     subtitle: page.subtitle,
-                                    iconName: page.isHome ? "house" : "doc.text"
+                                    iconName: page.isHome ? "house" : "doc.text",
+                                    theme: model.readerTheme
                                 )
                             }
                             .help(page.address)
@@ -131,7 +134,7 @@ struct ForkShell: View {
                     if model.historyEntries.isEmpty {
                         Text("No history yet")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(model.readerTheme.secondaryText)
                     } else {
                         Button {
                             model.clearHistory()
@@ -147,7 +150,8 @@ struct ForkShell: View {
                             SidebarRow(
                                 title: entry.title,
                                 subtitle: entry.subtitle,
-                                iconName: entry.iconName
+                                iconName: entry.iconName,
+                                theme: model.readerTheme
                             )
                         }
                         .help(entry.address)
@@ -158,7 +162,7 @@ struct ForkShell: View {
                     if model.bookmarks.isEmpty {
                         Text("No bookmarks yet")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(model.readerTheme.secondaryText)
                     } else {
                         ForEach(model.bookmarks) { bookmark in
                             HStack(spacing: 8) {
@@ -168,7 +172,8 @@ struct ForkShell: View {
                                     SidebarRow(
                                         title: bookmark.displayTitle,
                                         subtitle: bookmark.subtitle,
-                                        iconName: bookmark.iconName
+                                        iconName: bookmark.iconName,
+                                        theme: model.readerTheme
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -206,7 +211,8 @@ struct ForkShell: View {
                                 SidebarRow(
                                     title: draft.title,
                                     subtitle: draftSubtitle(for: draft),
-                                    iconName: draftIconName(for: draft)
+                                    iconName: draftIconName(for: draft),
+                                    theme: model.readerTheme
                                 )
                             }
                             .buttonStyle(.plain)
@@ -258,6 +264,8 @@ struct ForkShell: View {
                 }
             }
             .navigationTitle("Fork")
+            .scrollContentBackground(.hidden)
+            .background(model.readerTheme.sidebarBackground)
         } detail: {
             VStack(spacing: 0) {
                 switch workspaceMode {
@@ -267,6 +275,7 @@ struct ForkShell: View {
                         markdown: $model.draftMarkdown,
                         documentAddress: model.draftDocumentAddress,
                         status: model.statusMessage,
+                        theme: model.readerTheme,
                         createPage: model.createDraft,
                         copyAddress: model.addressCopied,
                         copyMarkdownLink: model.copySelectedDraftMarkdownLink,
@@ -280,6 +289,7 @@ struct ForkShell: View {
                             address: $model.addressText,
                             bookmarkLabel: $model.bookmarkLabel,
                             status: model.statusMessage,
+                            theme: model.readerTheme,
                             visit: model.visitAddress,
                             copyAddress: model.addressCopied,
                             bookmark: model.bookmarkCurrentPage
@@ -323,7 +333,7 @@ struct ForkShell: View {
                     }
                     .labelStyle(.iconOnly)
                     .help("Editor")
-                    .foregroundStyle(workspaceMode == .editor ? Color.accentColor : Color.primary)
+                    .foregroundStyle(workspaceMode == .editor ? model.readerTheme.accent : model.readerTheme.primaryText)
 
                     Button {
                         workspaceMode = .discover
@@ -332,7 +342,7 @@ struct ForkShell: View {
                     }
                     .labelStyle(.iconOnly)
                     .help("Discover")
-                    .foregroundStyle(workspaceMode == .discover ? Color.accentColor : Color.primary)
+                    .foregroundStyle(workspaceMode == .discover ? model.readerTheme.accent : model.readerTheme.primaryText)
 
                     Button(action: model.bookmarkCurrentPage) {
                         Label("Bookmark", systemImage: "bookmark")
@@ -348,6 +358,8 @@ struct ForkShell: View {
                 }
             }
         }
+        .tint(model.readerTheme.accent)
+        .preferredColorScheme(model.readerTheme.colorScheme)
         .frame(minWidth: 920, minHeight: 620)
         .confirmationDialog(
             "Delete Page?",
@@ -398,19 +410,22 @@ struct SidebarRow: View {
     let title: String
     let subtitle: String
     let iconName: String
+    let theme: ForkReaderTheme
 
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
+                    .foregroundStyle(theme.primaryText)
                     .lineLimit(1)
                 Text(subtitle)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.secondaryText)
                     .lineLimit(1)
             }
         } icon: {
             Image(systemName: iconName)
+                .foregroundStyle(theme.accent)
         }
     }
 }
@@ -587,10 +602,54 @@ enum ForkReaderTheme: String, CaseIterable, Identifiable {
         }
     }
 
+    var sidebarBackground: Color {
+        switch self {
+        case .system:
+            Color(red: 0.95, green: 0.95, blue: 0.93)
+        case .paper:
+            Color(red: 0.06, green: 0.07, blue: 0.12)
+        case .night:
+            Color(red: 0.04, green: 0.05, blue: 0.07)
+        }
+    }
+
+    var chromeBackground: Color {
+        switch self {
+        case .system:
+            Color(red: 0.98, green: 0.97, blue: 0.94)
+        case .paper:
+            Color(red: 0.08, green: 0.09, blue: 0.15)
+        case .night:
+            Color(red: 0.07, green: 0.08, blue: 0.11)
+        }
+    }
+
     var pageBackground: Color {
         switch self {
         case .system:
             Color(red: 1.00, green: 0.98, blue: 0.94)
+        case .paper:
+            Color(red: 0.10, green: 0.11, blue: 0.18)
+        case .night:
+            Color(red: 0.09, green: 0.10, blue: 0.14)
+        }
+    }
+
+    var editorBackground: Color {
+        switch self {
+        case .system:
+            Color(red: 0.94, green: 0.96, blue: 0.97)
+        case .paper:
+            Color(red: 0.07, green: 0.08, blue: 0.13)
+        case .night:
+            Color(red: 0.05, green: 0.06, blue: 0.08)
+        }
+    }
+
+    var editorSurface: Color {
+        switch self {
+        case .system:
+            Color(red: 1.00, green: 0.99, blue: 0.97)
         case .paper:
             Color(red: 0.10, green: 0.11, blue: 0.18)
         case .night:
@@ -652,12 +711,22 @@ enum ForkReaderTheme: String, CaseIterable, Identifiable {
             Color(red: 0.96, green: 0.43, blue: 0.72)
         }
     }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            nil
+        case .paper, .night:
+            .dark
+        }
+    }
 }
 
 struct AddressBar: View {
     @Binding var address: String
     @Binding var bookmarkLabel: String
     let status: String
+    let theme: ForkReaderTheme
     let visit: () -> Void
     let copyAddress: () -> Void
     let bookmark: () -> Void
@@ -697,11 +766,12 @@ struct AddressBar: View {
             HStack {
                 Text(status)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.secondaryText)
                 Spacer()
             }
         }
         .padding(12)
+        .background(theme.chromeBackground)
     }
 
     private func copyToPasteboard(_ text: String) {
@@ -958,6 +1028,7 @@ struct EditorWorkspace: View {
     @Binding var markdown: String
     let documentAddress: String
     let status: String
+    let theme: ForkReaderTheme
     let createPage: () -> Void
     let copyAddress: () -> Void
     let copyMarkdownLink: () -> Void
@@ -975,10 +1046,11 @@ struct EditorWorkspace: View {
                     Text(selectedTitle)
                         .font(.title2)
                         .fontWeight(.semibold)
+                        .foregroundStyle(theme.primaryText)
                         .lineLimit(1)
                     Text(mode == .view ? "Viewing your local draft" : "Editing your local draft")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.secondaryText)
                 }
 
                 Spacer()
@@ -1006,9 +1078,9 @@ struct EditorWorkspace: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(theme.chromeBackground)
 
-            Divider()
+            Divider().overlay(theme.divider)
 
             VStack(alignment: .leading, spacing: 16) {
                 switch mode {
@@ -1017,9 +1089,10 @@ struct EditorWorkspace: View {
                         VStack(alignment: .leading, spacing: 18) {
                             Text(selectedTitle)
                                 .font(.system(size: 34, weight: .semibold))
+                                .foregroundStyle(theme.primaryText)
                                 .lineLimit(2)
 
-                            MarkdownBlocksView(markdown: markdown, textColor: Color(nsColor: .textColor))
+                            MarkdownBlocksView(markdown: markdown, textColor: theme.primaryText)
                                 .textSelection(.enabled)
                         }
                         .padding(.vertical, 30)
@@ -1032,17 +1105,19 @@ struct EditorWorkspace: View {
                             .font(.title2)
                             .textFieldStyle(.plain)
                             .padding(.horizontal, 2)
+                            .foregroundStyle(theme.primaryText)
                             .onChange(of: title) {
                                 scheduleAutosave()
                             }
 
-                        Divider()
+                        Divider().overlay(theme.divider)
 
                         TextEditor(text: $markdown)
                             .font(.system(.body, design: .monospaced))
+                            .foregroundStyle(theme.primaryText)
                             .scrollContentBackground(.hidden)
                             .padding(10)
-                            .background(Color(nsColor: .textBackgroundColor))
+                            .background(theme.editorSurface)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             .onChange(of: markdown) {
                                 scheduleAutosave()
@@ -1051,14 +1126,14 @@ struct EditorWorkspace: View {
                     .frame(maxWidth: 860, alignment: .leading)
                 }
 
-                Divider()
+                Divider().overlay(theme.divider)
 
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text("Document")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.secondaryText)
 
-                    DraftAddressCopyRow(address: documentAddress, copied: copyAddress)
+                    DraftAddressCopyRow(address: documentAddress, theme: theme, copied: copyAddress)
 
                     Button(action: copyMarkdownLink) {
                         Label("Copy Markdown Link", systemImage: "link")
@@ -1071,14 +1146,14 @@ struct EditorWorkspace: View {
 
                     Text(status)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.secondaryText)
                         .lineLimit(1)
                 }
             }
             .padding(.horizontal, 32)
             .padding(.vertical, 24)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(theme.editorBackground)
         }
         .onDisappear {
             autosaveTask?.cancel()
@@ -1120,13 +1195,14 @@ struct EditorWorkspace: View {
 
 struct DraftAddressCopyRow: View {
     let address: String
+    let theme: ForkReaderTheme
     let copied: () -> Void
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(address.isEmpty ? "Unavailable" : address)
                 .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.secondaryText)
                 .lineLimit(1)
                 .textSelection(.enabled)
 

@@ -233,6 +233,7 @@ Notes:
 - A top-level Editor/Discover switch is the likely next UI step.
 - Started the Editor/Discover split in the app shell.
 - Editor now owns the main workspace by default and has a modal View/Edit switch for the selected local page.
+- Reader themes now apply across the app chrome, sidebar, Discover, and Editor surfaces instead of only styling rendered pages.
 
 ## Milestone 4: Signed Records
 
