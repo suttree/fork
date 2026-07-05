@@ -260,27 +260,6 @@ struct ForkShell: View {
             .navigationTitle("Fork")
         } detail: {
             VStack(spacing: 0) {
-                HStack {
-                    Picker("Workspace", selection: $workspaceMode) {
-                        ForEach(ForkWorkspaceMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 220)
-
-                    Spacer()
-
-                    Text(workspaceMode == .editor ? "Writing your place" : "Reading the network")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(Color(nsColor: .windowBackgroundColor))
-
-                Divider()
-
                 switch workspaceMode {
                 case .editor:
                     EditorWorkspace(
@@ -336,6 +315,24 @@ struct ForkShell: View {
                         Label("Home", systemImage: "house")
                     }
                     .disabled(!model.canVisitPlaceHome)
+
+                    Button {
+                        workspaceMode = .editor
+                    } label: {
+                        Label("Editor", systemImage: "square.and.pencil")
+                    }
+                    .labelStyle(.iconOnly)
+                    .help("Editor")
+                    .foregroundStyle(workspaceMode == .editor ? Color.accentColor : Color.primary)
+
+                    Button {
+                        workspaceMode = .discover
+                    } label: {
+                        Label("Discover", systemImage: "network")
+                    }
+                    .labelStyle(.iconOnly)
+                    .help("Discover")
+                    .foregroundStyle(workspaceMode == .discover ? Color.accentColor : Color.primary)
 
                     Button(action: model.bookmarkCurrentPage) {
                         Label("Bookmark", systemImage: "bookmark")
