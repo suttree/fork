@@ -24,6 +24,7 @@ Status: First in-memory vertical slice implemented.
 - Added key-derived author and document addresses using CryptoKit signing keys.
 - Added signed author manifests and signed document records with stable JSON encoding.
 - Added previous-record hashes so signed updates point back to the records they replace.
+- Older signed records no longer replace newer cached records.
 - Same-version signed records no longer replace already cached records.
 - Newer signed records now have to point back to the cached record they replace.
 - Added verification before rendering; tampered records are refused.
@@ -180,6 +181,7 @@ Status: Started
 - Verify signatures before rendering.
 - Refuse to render invalid records.
 - Link signed updates to the previous signed record hash.
+- Keep existing cached records when an older valid record arrives later.
 - Keep existing cached records when another valid record arrives with the same version.
 - Require newer records to link to the cached previous record before replacing it.
 - Validate signed record type and key shape before accepting records into cache.
