@@ -264,7 +264,7 @@ struct ForkShell: View {
                 model.cancelDraftDeletion()
             }
         } message: {
-            Text("This removes \(model.pendingDraftDeletionTitle) from local drafts. Publish afterward to update your signed place.")
+            Text("This removes \(model.pendingDraftDeletionTitle) from local pages. Publish afterward to update your signed place.")
         }
     }
 
@@ -826,10 +826,10 @@ final class ForkAppModel: ObservableObject {
         do {
             _ = try persistDraft()
             try refreshDrafts()
-            statusMessage = "Draft saved."
+            statusMessage = "Page saved."
         } catch {
             errorMessage = error.localizedDescription
-            statusMessage = "Draft could not be saved."
+            statusMessage = "Page could not be saved."
         }
     }
 
@@ -936,10 +936,10 @@ final class ForkAppModel: ObservableObject {
             if id == selectedDraftID {
                 try loadDraft(drafts.first?.id ?? "home")
             }
-            statusMessage = "Draft deleted. Publish to update your signed place."
+            statusMessage = "Page deleted. Publish to update your signed place."
         } catch {
             errorMessage = error.localizedDescription
-            statusMessage = "Draft could not be deleted."
+            statusMessage = "Page could not be deleted."
         }
     }
 

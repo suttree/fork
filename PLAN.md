@@ -58,13 +58,12 @@ Status: First in-memory vertical slice implemented.
 - Surfaced live/cached/unavailable status in the browsing address bar.
 - Added a signed place page list in the sidebar from the current author manifest.
 - Place and writer sidebars now label home/current/page roles instead of leaning on raw addresses.
-- Added local reader themes for system, paper, and night reading modes.
+- Added colorful local reader themes for Classic, Starship, and NvChad reading modes.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
 
 - The writer can create, select, edit, and delete local pages, but it still needs a more polished document manager for page roles and ordering.
-- Reader themes should become more colorful and expressive while remaining user-selected, not author-forced.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
 
@@ -222,8 +221,7 @@ Notes:
 
 - The address bar now shows the current browsing status so live, cached, and unavailable states are visible outside the writer panel.
 - The sample author can be taken offline in the app after a live visit, so the cached-reader path is visible without leaving the prototype.
-- The reader has a persisted theme picker with system, paper, and night modes.
-- Next: replace the plain starter themes with more colorful reader-owned themes, for example a Starship terminal-line inspired theme and a nvChad/Neovim inspired theme. Authors may publish content and metadata, but the reader keeps final control of how pages look locally.
+- The reader has a persisted theme picker with colorful reader-owned Classic, Starship, and NvChad modes. Authors may publish content and metadata, but the reader keeps final control of how pages look locally.
 
 ## Milestone 8: Bookmark-Led Browsing
 
