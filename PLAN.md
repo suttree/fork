@@ -278,6 +278,7 @@ Notes:
 - History rows now label author places and document pages instead of showing raw keys inline.
 - Bookmarks now support local nicknames.
 - Bookmarking can now save author and document addresses.
+- Bookmark saves now distinguish new bookmarks from updated nicknames.
 - Bookmark rows show whether a saved address is an author place or document page.
 - Bookmark rows can now delete saved entries.
 - The place page list now labels home and current pages clearly while keeping raw addresses available as help text.

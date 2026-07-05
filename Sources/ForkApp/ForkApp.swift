@@ -1222,10 +1222,11 @@ final class ForkAppModel: ObservableObject {
                 nickname: bookmarkLabel,
                 createdAt: Date()
             )
+            let didUpdateBookmark = bookmarks.contains { $0.address == bookmark.address }
             bookmarks.removeAll { $0.address == bookmark.address }
             bookmarks.insert(bookmark, at: 0)
             try bookmarkStore.saveBookmarks(bookmarks)
-            statusMessage = "Bookmark saved."
+            statusMessage = didUpdateBookmark ? "Bookmark updated." : "Bookmark saved."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Bookmark could not be saved."
