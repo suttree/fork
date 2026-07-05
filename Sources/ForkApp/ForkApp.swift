@@ -136,20 +136,35 @@ struct ForkShell: View {
 
                 Section("Bookmarks") {
                     ForEach(model.bookmarks) { bookmark in
-                        Button {
-                            model.visit(bookmark.address)
-                        } label: {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(bookmark.displayTitle)
-                                    Text(bookmark.subtitle)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
+                        HStack(spacing: 8) {
+                            Button {
+                                model.visit(bookmark.address)
+                            } label: {
+                                Label {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(bookmark.displayTitle)
+                                            .lineLimit(1)
+                                        Text(bookmark.subtitle)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                } icon: {
+                                    Image(systemName: bookmark.iconName)
                                 }
-                            } icon: {
-                                Image(systemName: bookmark.iconName)
                             }
+                            .buttonStyle(.plain)
+
+                            Spacer()
+
+                            Button {
+                                model.deleteBookmark(bookmark.address)
+                            } label: {
+                                Label("Delete Bookmark", systemImage: "trash")
+                            }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.borderless)
+                            .help("Delete bookmark")
                         }
                     }
                 }
@@ -1107,6 +1122,20 @@ final class ForkAppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Bookmark could not be saved."
+        }
+    }
+
+    func deleteBookmark(_ address: String) {
+        do {
+            bookmarks.removeAll { $0.address == address }
+            try bookmarkStore.saveBookmarks(bookmarks)
+            if let page {
+                bookmarkLabel = bookmarkLabel(for: addressText) ?? page.title
+            }
+            statusMessage = "Bookmark deleted."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Bookmark could not be deleted."
         }
     }
 
