@@ -990,7 +990,7 @@ final class ForkAppModel: ObservableObject {
                 renderedPage = try readerPeer.render(address)
             }
             show(renderedPage, displayedAddress: address.rawValue, addHistory: true)
-            statusMessage = renderedPage.source == .live ? "Showing live signed place." : "Showing verified cached page."
+            statusMessage = statusText(for: renderedPage)
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Address unavailable."
@@ -1223,12 +1223,21 @@ final class ForkAppModel: ObservableObject {
             let address = try ForkAddress(history[index])
             let renderedPage = try readerPeer.render(address)
             show(renderedPage, displayedAddress: address.rawValue, addHistory: false)
-            statusMessage = "Showing verified cached page."
+            statusMessage = statusText(for: renderedPage)
             updateHistoryEntries()
             updateHistoryAvailability()
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "History item unavailable."
+        }
+    }
+
+    private func statusText(for renderedPage: RenderedPage) -> String {
+        switch renderedPage.source {
+        case .live:
+            return "Showing live signed place."
+        case .cache(let cachedAt):
+            return "Showing verified cached copy from \(cachedAt.formatted(date: .abbreviated, time: .shortened))."
         }
     }
 

@@ -56,6 +56,7 @@ Status: First in-memory vertical slice implemented.
 - Added copy controls for author and document addresses in the reader.
 - Added document version and previous-record hints in the reader.
 - Surfaced live/cached/unavailable status in the browsing address bar.
+- Cached status messages now include the cached copy timestamp in the address bar.
 - Added a signed place page list in the sidebar from the current author manifest.
 - Place and writer sidebars now label home/current/page roles instead of leaning on raw addresses.
 - Added colorful local reader themes for Classic, Starship, and NvChad reading modes.
@@ -220,6 +221,7 @@ Output:
 Notes:
 
 - The address bar now shows the current browsing status so live, cached, and unavailable states are visible outside the writer panel.
+- The address bar includes cache timestamps when showing a verified cached copy.
 - The sample author can be taken offline in the app after a live visit, so the cached-reader path is visible without leaving the prototype.
 - The reader has a persisted theme picker with colorful reader-owned Classic, Starship, and NvChad modes. Authors may publish content and metadata, but the reader keeps final control of how pages look locally.
 
