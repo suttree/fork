@@ -58,9 +58,19 @@ private func forkApplicationSupportDirectory() -> URL {
         .appendingPathComponent("Fork", isDirectory: true)
 }
 
+private enum ForkWorkspaceMode: String, CaseIterable, Identifiable {
+    case editor = "Editor"
+    case discover = "Discover"
+
+    var id: String {
+        rawValue
+    }
+}
+
 struct ForkShell: View {
     @ObservedObject var model: ForkAppModel
     let page: RenderedPage
+    @State private var workspaceMode: ForkWorkspaceMode = .editor
 
     var body: some View {
         NavigationSplitView {
@@ -250,31 +260,30 @@ struct ForkShell: View {
             .navigationTitle("Fork")
         } detail: {
             VStack(spacing: 0) {
-                AddressBar(
-                    address: $model.addressText,
-                    bookmarkLabel: $model.bookmarkLabel,
-                    status: model.statusMessage,
-                    visit: model.visitAddress,
-                    copyAddress: model.addressCopied,
-                    bookmark: model.bookmarkCurrentPage
-                )
+                HStack {
+                    Picker("Workspace", selection: $workspaceMode) {
+                        ForEach(ForkWorkspaceMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 220)
+
+                    Spacer()
+
+                    Text(workspaceMode == .editor ? "Writing your place" : "Reading the network")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color(nsColor: .windowBackgroundColor))
+
                 Divider()
 
-                HStack(spacing: 0) {
-                    ReaderView(
-                        page: page,
-                        theme: model.readerTheme,
-                        hasUnpublishedLocalDraft: model.hasUnpublishedLocalDraft,
-                        copyAddress: model.addressCopied,
-                        copyPlaceMarkdownLink: model.copyCurrentPlaceMarkdownLink,
-                        copyMarkdownLink: model.copyCurrentPageMarkdownLink,
-                        openURL: model.openMarkdownLink
-                    )
-                        .frame(minWidth: 420)
-
-                    Divider()
-
-                    WriterPreview(
+                switch workspaceMode {
+                case .editor:
+                    EditorWorkspace(
                         title: $model.draftTitle,
                         markdown: $model.draftMarkdown,
                         documentAddress: model.draftDocumentAddress,
@@ -286,7 +295,29 @@ struct ForkShell: View {
                         saveDraft: model.saveDraft,
                         publish: model.publish
                     )
-                        .frame(minWidth: 300)
+                case .discover:
+                    VStack(spacing: 0) {
+                        AddressBar(
+                            address: $model.addressText,
+                            bookmarkLabel: $model.bookmarkLabel,
+                            status: model.statusMessage,
+                            visit: model.visitAddress,
+                            copyAddress: model.addressCopied,
+                            bookmark: model.bookmarkCurrentPage
+                        )
+
+                        Divider()
+
+                        ReaderView(
+                            page: page,
+                            theme: model.readerTheme,
+                            hasUnpublishedLocalDraft: model.hasUnpublishedLocalDraft,
+                            copyAddress: model.addressCopied,
+                            copyPlaceMarkdownLink: model.copyCurrentPlaceMarkdownLink,
+                            copyMarkdownLink: model.copyCurrentPageMarkdownLink,
+                            openURL: model.openMarkdownLink
+                        )
+                    }
                 }
             }
             .toolbar {
@@ -916,10 +947,10 @@ struct AddressCopyRow: View {
     }
 }
 
-struct WriterPreview: View {
+struct EditorWorkspace: View {
     private enum Mode: String, CaseIterable, Identifiable {
+        case view = "View"
         case edit = "Edit"
-        case preview = "Preview"
 
         var id: String {
             rawValue
@@ -936,16 +967,22 @@ struct WriterPreview: View {
     let autosaveDraft: () -> Void
     let saveDraft: () -> Void
     let publish: () -> Void
-    @State private var mode: Mode = .edit
+    @State private var mode: Mode = .view
     @State private var autosaveTask: Task<Void, Never>?
     @State private var hasPendingAutosave = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Write")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(selectedTitle)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .lineLimit(1)
+                    Text(mode == .view ? "Viewing your local draft" : "Editing your local draft")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 Spacer()
 
@@ -953,60 +990,6 @@ struct WriterPreview: View {
                     Label("Add Page", systemImage: "plus")
                 }
 
-                Picker("Writer Mode", selection: $mode) {
-                    ForEach(Mode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 160)
-            }
-
-            TextField("Title", text: $title)
-                .textFieldStyle(.roundedBorder)
-                .onChange(of: title) {
-                    scheduleAutosave()
-                }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Document Address")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                HStack(spacing: 10) {
-                    DraftAddressCopyRow(address: documentAddress, copied: copyAddress)
-
-                    Button(action: copyMarkdownLink) {
-                        Label("Copy Markdown Link", systemImage: "link")
-                    }
-                    .labelStyle(.iconOnly)
-                    .help("Copy Markdown link")
-                    .disabled(documentAddress.isEmpty)
-                }
-            }
-
-            Group {
-                switch mode {
-                case .edit:
-                    TextEditor(text: $markdown)
-                        .font(.system(.body, design: .monospaced))
-                        .scrollContentBackground(.hidden)
-                        .padding(8)
-                        .onChange(of: markdown) {
-                            scheduleAutosave()
-                        }
-                case .preview:
-                    ScrollView {
-                        MarkdownBlocksView(markdown: markdown, textColor: Color(nsColor: .textColor))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(12)
-                    }
-                }
-            }
-            .background(Color(nsColor: .textBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-
-            HStack(spacing: 10) {
                 Button(action: saveDraft) {
                     Label("Save Draft", systemImage: "tray.and.arrow.down")
                 }
@@ -1015,17 +998,104 @@ struct WriterPreview: View {
                     Label("Publish Signed Place", systemImage: "signature")
                 }
                 .buttonStyle(.borderedProminent)
-            }
 
-            Text(status)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                Picker("Editor Mode", selection: $mode) {
+                    ForEach(Mode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 150)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+            .background(Color(nsColor: .windowBackgroundColor))
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 16) {
+                switch mode {
+                case .view:
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            Text(selectedTitle)
+                                .font(.system(size: 34, weight: .semibold))
+                                .lineLimit(2)
+
+                            MarkdownBlocksView(markdown: markdown, textColor: Color(nsColor: .textColor))
+                                .textSelection(.enabled)
+                        }
+                        .padding(.vertical, 30)
+                        .frame(maxWidth: 760, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .top)
+                    }
+                case .edit:
+                    VStack(alignment: .leading, spacing: 12) {
+                        TextField("Title", text: $title)
+                            .font(.title2)
+                            .textFieldStyle(.plain)
+                            .padding(.horizontal, 2)
+                            .onChange(of: title) {
+                                scheduleAutosave()
+                            }
+
+                        Divider()
+
+                        TextEditor(text: $markdown)
+                            .font(.system(.body, design: .monospaced))
+                            .scrollContentBackground(.hidden)
+                            .padding(10)
+                            .background(Color(nsColor: .textBackgroundColor))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .onChange(of: markdown) {
+                                scheduleAutosave()
+                            }
+                    }
+                    .frame(maxWidth: 860, alignment: .leading)
+                }
+
+                Divider()
+
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text("Document")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    DraftAddressCopyRow(address: documentAddress, copied: copyAddress)
+
+                    Button(action: copyMarkdownLink) {
+                        Label("Copy Markdown Link", systemImage: "link")
+                    }
+                    .labelStyle(.iconOnly)
+                    .help("Copy Markdown link")
+                    .disabled(documentAddress.isEmpty)
+
+                    Spacer()
+
+                    Text(status)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .padding(.horizontal, 32)
+            .padding(.vertical, 24)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(Color(nsColor: .controlBackgroundColor))
         }
-        .padding(24)
         .onDisappear {
             autosaveTask?.cancel()
             flushAutosaveIfNeeded()
         }
+        .onChange(of: mode) { _, newMode in
+            if newMode == .view {
+                flushAutosaveIfNeeded()
+            }
+        }
+    }
+
+    private var selectedTitle: String {
+        title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Untitled Page" : title
     }
 
     private func scheduleAutosave() {

@@ -212,7 +212,7 @@ Notes:
 
 ## Milestone 3A: Editor-First App Shape
 
-Status: Not started
+Status: Started
 
 - Reframe the app shell around two primary modes: Editor and Discover.
 - Make Editor the default daily workspace for the user's own place.
@@ -231,6 +231,8 @@ Notes:
 - This is a product-direction milestone, not a crypto/networking milestone.
 - The current split-pane prototype can be reused, but it should be reorganized rather than simply decorated.
 - A top-level Editor/Discover switch is the likely next UI step.
+- Started the Editor/Discover split in the app shell.
+- Editor now owns the main workspace by default and has a modal View/Edit switch for the selected local page.
 
 ## Milestone 4: Signed Records
 
