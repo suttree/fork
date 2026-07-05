@@ -59,7 +59,8 @@ Status: First in-memory vertical slice implemented.
 
 Still not done:
 
-- The writer can create, select, edit, and delete local pages, but it still needs a more polished document manager.
+- The writer can create, select, edit, and delete local pages, but it still needs a more polished document manager that makes "add a page to my place" feel obvious from the home page flow.
+- Reader themes should become more colorful and expressive while remaining user-selected, not author-forced.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
 
@@ -131,6 +132,7 @@ Notes:
 - Republishing after removing a page exports only the documents listed by the latest author manifest.
 - Cached document addresses can now be rendered directly as verified deep links.
 - The sidebar can now show and visit the pages listed by the current verified author manifest.
+- Next: make adding pages a first-class author action from the writer/home-place UI, with clearer page titles, page roles, and navigation back to the home document.
 
 ## Milestone 4: Signed Records
 
@@ -214,6 +216,7 @@ Notes:
 - The address bar now shows the current browsing status so live, cached, and unavailable states are visible outside the writer panel.
 - The sample author can be taken offline in the app after a live visit, so the cached-reader path is visible without leaving the prototype.
 - The reader has a persisted theme picker with system, paper, and night modes.
+- Next: replace the plain starter themes with more colorful reader-owned themes, for example a Starship terminal-line inspired theme and a nvChad/Neovim inspired theme. Authors may publish content and metadata, but the reader keeps final control of how pages look locally.
 
 ## Milestone 8: Bookmark-Led Browsing
 
