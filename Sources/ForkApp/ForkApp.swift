@@ -91,7 +91,7 @@ struct ForkShell: View {
                 }
 
                 if !model.placePages.isEmpty {
-                    Section("Place") {
+                    Section("Place Pages") {
                         ForEach(model.placePages) { page in
                             Button {
                                 model.visit(page.address)
@@ -109,6 +109,7 @@ struct ForkShell: View {
                                     Image(systemName: page.isHome ? "house" : "doc.text")
                                 }
                             }
+                            .help(page.address)
                         }
                     }
                 }
@@ -167,7 +168,7 @@ struct ForkShell: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(draft.title)
                                             .lineLimit(1)
-                                        Text(draft.id == model.selectedDraftID ? "Editing" : draft.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                                        Text(draftSubtitle(for: draft))
                                             .font(.caption2)
                                             .foregroundStyle(.secondary)
                                             .lineLimit(1)
@@ -266,6 +267,16 @@ struct ForkShell: View {
             Text("This removes \(model.pendingDraftDeletionTitle) from local drafts. Publish afterward to update your signed place.")
         }
     }
+
+    private func draftSubtitle(for draft: DraftDocument) -> String {
+        if draft.id == model.selectedDraftID {
+            return draft.id == "home" ? "Editing home" : "Editing page"
+        }
+        if draft.id == "home" {
+            return "Home page"
+        }
+        return draft.updatedAt.formatted(date: .abbreviated, time: .shortened)
+    }
 }
 
 struct ForkHistoryEntry: Identifiable, Equatable {
@@ -287,12 +298,12 @@ struct ForkPlacePage: Identifiable, Equatable {
 
     var subtitle: String {
         if isCurrent {
-            return "Current page"
+            return isHome ? "Current home page" : "Current page"
         }
         if isHome {
-            return "Home"
+            return "Home page"
         }
-        return address
+        return "Place page"
     }
 }
 

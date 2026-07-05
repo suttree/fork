@@ -56,6 +56,7 @@ Status: First in-memory vertical slice implemented.
 - Added document version and previous-record hints in the reader.
 - Surfaced live/cached/unavailable status in the browsing address bar.
 - Added a signed place page list in the sidebar from the current author manifest.
+- Place and writer sidebars now label home/current/page roles instead of leaning on raw addresses.
 - Added local reader themes for system, paper, and night reading modes.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
@@ -244,6 +245,7 @@ Notes:
 - Bookmarks now support local nicknames.
 - Bookmarking can now save author and document addresses.
 - Bookmark rows show whether a saved address is an author place or document page.
+- The place page list now labels home and current pages clearly while keeping raw addresses available as help text.
 
 ## First Technical Questions To Resolve
 
