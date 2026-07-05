@@ -58,8 +58,8 @@ Status: First in-memory vertical slice implemented.
 - Added a file-backed verified record cache for manifests and document records.
 - Added a file-backed draft store and wired the demo publish path to it.
 - Wired the prototype editor to save drafts and publish signed records from the current draft.
-- Added a draft list in the writer, with new-page creation and selection.
-- Added a first-class Add Page action in the writer so authors can grow a place from the writing flow.
+- Added a draft list in the writer, with page selection.
+- Replaced explicit Add Page actions with wiki-style page creation: authors add local Markdown links, follow them, and edit the created draft.
 - The writer page manager can publish the place directly after page-list changes.
 - Publishing from any page keeps the `home` draft as the author place home while including added pages in the manifest.
 - The app author peer now restores persisted signed records before publishing so updates continue the signed version chain across launches.
@@ -187,8 +187,8 @@ Notes:
 - The writer has an edit/preview switch for local Markdown drafts.
 - The reader now renders Markdown as blocks so headings and paragraphs keep their structure.
 - Draft titles are now trimmed before saving, with blank titles falling back to `Untitled Page`.
-- The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
-- The writer exposes Add Page from the writing surface, so authors can add pages without hunting through the sidebar.
+- The writer can now switch between local Markdown drafts. Each draft uses its own stored document identity when published.
+- The writer creates pages wiki-style: a local Markdown link can be followed to open an existing draft or create a new one ready to edit.
 - The writer sidebar exposes Publish Place beside page management actions.
 - The writer exposes move-up and move-down controls for non-home pages.
 - The writer labels ordered pages as Page 1, Page 2, etc. while keeping Home distinct.

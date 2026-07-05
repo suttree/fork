@@ -207,10 +207,6 @@ struct ForkShell: View {
                 }
 
                 Section("Write") {
-                    Button(action: model.createDraft) {
-                        Label("Add Page", systemImage: "plus")
-                    }
-
                     Button(action: model.publish) {
                         Label("Publish Place", systemImage: "signature")
                     }
@@ -288,11 +284,11 @@ struct ForkShell: View {
                         documentAddress: model.draftDocumentAddress,
                         status: model.statusMessage,
                         theme: model.readerTheme,
-                        createPage: model.createDraft,
                         copyAddress: model.addressCopied,
                         copyMarkdownLink: model.copySelectedDraftMarkdownLink,
                         autosaveDraft: model.autosaveDraft,
-                        publish: model.publish
+                        publish: model.publish,
+                        openURL: model.openEditorMarkdownLink
                     )
                 case .discover:
                     VStack(spacing: 0) {
@@ -1055,11 +1051,11 @@ struct EditorWorkspace: View {
     let documentAddress: String
     let status: String
     let theme: ForkReaderTheme
-    let createPage: () -> Void
     let copyAddress: () -> Void
     let copyMarkdownLink: () -> Void
     let autosaveDraft: () -> Void
     let publish: () -> Void
+    let openURL: (URL) -> OpenURLAction.Result
     @State private var mode: Mode = .view
     @State private var autosaveTask: Task<Void, Never>?
     @State private var hasPendingAutosave = false
@@ -1079,12 +1075,6 @@ struct EditorWorkspace: View {
                 }
 
                 Spacer()
-
-                Button(action: createPage) {
-                    Label("Add Page", systemImage: "plus")
-                        .font(.system(size: ForkTypography.headerControl, weight: .semibold))
-                }
-                .controlSize(.small)
 
                 Button(action: publish) {
                     Label("Publish Signed Place", systemImage: "signature")
@@ -1201,6 +1191,11 @@ struct EditorWorkspace: View {
                 flushAutosaveIfNeeded()
             }
         }
+        .environment(\.openURL, OpenURLAction { url in
+            let result = openURL(url)
+            mode = .edit
+            return result
+        })
     }
 
     private var selectedTitle: String {
@@ -1399,19 +1394,6 @@ final class ForkAppModel: ObservableObject {
         }
     }
 
-    func createDraft() {
-        do {
-            _ = try persistDraft()
-            let draft = try draftProvider.createDraft()
-            try refreshDrafts()
-            try loadDraft(draft.id)
-            statusMessage = "Added page to your place."
-        } catch {
-            errorMessage = error.localizedDescription
-            statusMessage = "Page could not be added."
-        }
-    }
-
     func selectDraft(_ id: String) {
         do {
             _ = try persistDraft()
@@ -1515,13 +1497,64 @@ final class ForkAppModel: ObservableObject {
     }
 
     func openMarkdownLink(_ url: URL) -> OpenURLAction.Result {
-        guard url.scheme?.lowercased() == "fork" else {
-            statusMessage = "Fork opens Fork addresses only."
+        if let scheme = url.scheme?.lowercased(), !scheme.isEmpty {
+            guard scheme == "fork" else {
+                statusMessage = "Fork opens Fork addresses only."
+                return .discarded
+            }
+
+            visit(url.absoluteString)
+            return .handled
+        }
+
+        return openLocalPageLink(url)
+    }
+
+    func openEditorMarkdownLink(_ url: URL) -> OpenURLAction.Result {
+        if let scheme = url.scheme?.lowercased(), !scheme.isEmpty {
+            return openMarkdownLink(url)
+        }
+
+        return openLocalPageLink(url, requireOwnRenderedPage: false)
+    }
+
+    private func openLocalPageLink(_ url: URL, requireOwnRenderedPage: Bool = true) -> OpenURLAction.Result {
+        guard !requireOwnRenderedPage || page?.authorAddress == authorAddress else {
+            statusMessage = "Local page links can be created from your own place."
+            return .discarded
+        }
+        guard let target = localPageTarget(from: url) else {
+            statusMessage = "Local page link could not be opened."
             return .discarded
         }
 
-        visit(url.absoluteString)
-        return .handled
+        do {
+            _ = try persistDraft()
+            let localDrafts = try draftProvider.loadDrafts()
+            if let existingDraft = localDrafts.first(where: { wikiSlug(for: $0.title) == target.slug }) {
+                try loadDraft(existingDraft.id)
+                try refreshDrafts()
+                statusMessage = "Editing \(existingDraft.title)."
+                return .handled
+            }
+
+            let draft = DraftDocument(
+                id: UUID().uuidString,
+                title: target.title,
+                markdown: "# \(target.title)\n\n",
+                updatedAt: Date(),
+                pageOrder: nextPageOrder(in: localDrafts)
+            )
+            try draftProvider.saveDraft(draft)
+            try refreshDrafts()
+            try loadDraft(draft.id)
+            statusMessage = "Created \(draft.title). Publish to add it to your signed place."
+            return .handled
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Local page link could not be opened."
+            return .discarded
+        }
     }
 
     func addressCopied() {
@@ -1888,6 +1921,50 @@ final class ForkAppModel: ObservableObject {
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "[", with: "\\[")
             .replacingOccurrences(of: "]", with: "\\]")
+    }
+
+    private func localPageTarget(from url: URL) -> (title: String, slug: String)? {
+        var target = (url.absoluteString.removingPercentEncoding ?? url.absoluteString)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let fragment = target.firstIndex(of: "#") {
+            target = String(target[..<fragment])
+        }
+        if let query = target.firstIndex(of: "?") {
+            target = String(target[..<query])
+        }
+        target = target.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        if target.hasSuffix(".md") {
+            target.removeLast(3)
+        }
+        guard !target.isEmpty else {
+            return nil
+        }
+
+        let titleSeed = target
+            .split(separator: "/")
+            .last
+            .map(String.init) ?? target
+        let title = titleSeed
+            .replacingOccurrences(of: "-", with: " ")
+            .replacingOccurrences(of: "_", with: " ")
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+            .capitalized
+        let slug = wikiSlug(for: title)
+        return slug.isEmpty ? nil : (title, slug)
+    }
+
+    private func wikiSlug(for title: String) -> String {
+        title
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .joined(separator: "-")
+    }
+
+    private func nextPageOrder(in drafts: [DraftDocument]) -> Int {
+        (drafts.filter { $0.id != "home" }.map(\.pageOrder).max() ?? 0) + 1
     }
 
     private func mergedDrafts(_ drafts: [DraftDocument], replacingWith currentDraft: DraftDocument) -> [DraftDocument] {
