@@ -1305,6 +1305,7 @@ final class ForkAppModel: ObservableObject {
             bookmarks.removeAll { $0.address == bookmark.address }
             bookmarks.insert(bookmark, at: 0)
             try bookmarkStore.saveBookmarks(bookmarks)
+            bookmarkLabel = bookmark.displayTitle
             updateHistoryEntries()
             statusMessage = didUpdateBookmark ? "Bookmark updated." : "Bookmark saved."
         } catch {
