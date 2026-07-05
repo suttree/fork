@@ -246,7 +246,7 @@ Output:
 Notes:
 
 - The address bar now shows the current browsing status so live, cached, and unavailable states are visible outside the writer panel.
-- The address bar can now copy the current Fork address directly.
+- The address bar can now copy the current Fork address directly and confirm the copy.
 - The address bar includes cache timestamps when showing a verified cached copy.
 - Address failures now distinguish invalid Fork addresses, unavailable verified cache entries, and refused unverifiable records.
 - The sample author can be taken offline in the app after a live visit, so the cached-reader path is visible without leaving the prototype.

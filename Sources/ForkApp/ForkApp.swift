@@ -248,6 +248,7 @@ struct ForkShell: View {
                     bookmarkLabel: $model.bookmarkLabel,
                     status: model.statusMessage,
                     visit: model.visitAddress,
+                    copyAddress: model.addressCopied,
                     bookmark: model.bookmarkCurrentPage
                 )
                 Divider()
@@ -578,6 +579,7 @@ struct AddressBar: View {
     @Binding var bookmarkLabel: String
     let status: String
     let visit: () -> Void
+    let copyAddress: () -> Void
     let bookmark: () -> Void
 
     var body: some View {
@@ -594,6 +596,7 @@ struct AddressBar: View {
 
                 Button {
                     copyToPasteboard(address)
+                    copyAddress()
                 } label: {
                     Label("Copy Address", systemImage: "doc.on.doc")
                 }
@@ -1143,6 +1146,10 @@ final class ForkAppModel: ObservableObject {
 
     func visitAddress() {
         visit(addressText)
+    }
+
+    func addressCopied() {
+        statusMessage = "Address copied."
     }
 
     func visitOwnPlace() {
