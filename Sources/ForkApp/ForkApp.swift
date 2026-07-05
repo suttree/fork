@@ -190,6 +190,7 @@ struct ForkShell: View {
                                 .labelStyle(.iconOnly)
                                 .buttonStyle(.borderless)
                                 .help("Move page up")
+                                .disabled(!model.canMoveDraftUp(draft.id))
 
                                 Button {
                                     model.moveDraftDown(draft.id)
@@ -199,6 +200,7 @@ struct ForkShell: View {
                                 .labelStyle(.iconOnly)
                                 .buttonStyle(.borderless)
                                 .help("Move page down")
+                                .disabled(!model.canMoveDraftDown(draft.id))
 
                                 Button {
                                     model.requestDraftDeletion(draft.id)
@@ -293,12 +295,23 @@ struct ForkShell: View {
 
     private func draftSubtitle(for draft: DraftDocument) -> String {
         if draft.id == model.selectedDraftID {
-            return draft.id == "home" ? "Editing home" : "Editing page"
+            return draft.id == "home" ? "Editing home" : "Editing \(pageLabel(for: draft))"
         }
         if draft.id == "home" {
             return "Home page"
         }
-        return draft.updatedAt.formatted(date: .abbreviated, time: .shortened)
+        return pageLabel(for: draft)
+    }
+
+    private func pageLabel(for draft: DraftDocument) -> String {
+        guard draft.id != "home" else {
+            return "Home page"
+        }
+        let pageDrafts = model.drafts.filter { $0.id != "home" }
+        guard let index = pageDrafts.firstIndex(where: { $0.id == draft.id }) else {
+            return "Place page"
+        }
+        return "Page \(index + 1)"
     }
 }
 
@@ -934,6 +947,14 @@ final class ForkAppModel: ObservableObject {
         moveDraft(id, direction: .down)
     }
 
+    func canMoveDraftUp(_ id: String) -> Bool {
+        canMoveDraft(id, direction: .up)
+    }
+
+    func canMoveDraftDown(_ id: String) -> Bool {
+        canMoveDraft(id, direction: .down)
+    }
+
     func requestDraftDeletion(_ id: String) {
         guard id != "home" else {
             statusMessage = "The home page cannot be deleted."
@@ -985,6 +1006,23 @@ final class ForkAppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Page order could not be updated."
+        }
+    }
+
+    private func canMoveDraft(_ id: String, direction: DraftMoveDirection) -> Bool {
+        guard id != "home" else {
+            return false
+        }
+        let pageDrafts = drafts.filter { $0.id != "home" }
+        guard let index = pageDrafts.firstIndex(where: { $0.id == id }) else {
+            return false
+        }
+
+        switch direction {
+        case .up:
+            return index > 0
+        case .down:
+            return index + 1 < pageDrafts.count
         }
     }
 
