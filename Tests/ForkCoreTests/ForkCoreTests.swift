@@ -479,6 +479,48 @@ struct ForkCoreTests {
         #expect(!bundle.documents.map(\.payload.documentPublicKey).contains(removedIdentity.address.key))
     }
 
+    @Test("incomplete author bundles are rejected without caching")
+    func incompleteAuthorBundlesAreRejectedWithoutCaching() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorPeer = LocalPeer(name: "Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        let homeIdentity = ForkIdentity(role: .document)
+        let aboutIdentity = ForkIdentity(role: .document)
+        try authorPeer.publishDocuments(
+            [
+                LocalDocumentPublication(
+                    identity: homeIdentity,
+                    title: "Home",
+                    markdown: "# Home"
+                ),
+                LocalDocumentPublication(
+                    identity: aboutIdentity,
+                    title: "About",
+                    markdown: "# About"
+                )
+            ],
+            homeDocument: homeIdentity.address,
+            createdAt: now
+        )
+        let completeBundle = try authorPeer.exportAuthorBundle(authorAddress)
+        let incompleteBundle = AuthorRecordBundle(
+            manifest: completeBundle.manifest,
+            documents: [completeBundle.documents[0]]
+        )
+
+        #expect(throws: ForkError.invalidSignature) {
+            try readerPeer.importAuthorBundle(
+                incompleteBundle,
+                expectedAuthor: authorAddress,
+                cachedAt: now
+            )
+        }
+        #expect(throws: ForkError.missingManifest(authorAddress)) {
+            try readerPeer.renderAuthor(authorAddress)
+        }
+    }
+
     @Test("published updates link to previous signed records")
     func publishedUpdatesLinkToPreviousSignedRecords() throws {
         let firstDate = Date(timeIntervalSince1970: 1_783_078_400)

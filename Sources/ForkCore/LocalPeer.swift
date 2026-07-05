@@ -282,19 +282,32 @@ public final class LocalPeer: @unchecked Sendable {
             throw ForkError.invalidSignature
         }
 
-        try accept(manifest: bundle.manifest, cachedAt: cachedAt)
+        guard try ForkRecordSigner.verify(bundle.manifest) else {
+            throw ForkError.invalidSignature
+        }
 
-        let expectedDocumentKeys = Set(
-            try bundle.manifest.payload.documents.map { document in
-                try ForkAddress(document.address).key
-            }
-        )
+        let expectedDocumentKeys = try bundle.manifest.payload.documents.map { document in
+            try ForkAddress(document.address).key
+        }
+        let expectedDocumentKeySet = Set(expectedDocumentKeys)
+        let providedDocumentKeys = bundle.documents.map(\.payload.documentPublicKey)
+        let providedDocumentKeySet = Set(providedDocumentKeys)
+
+        guard expectedDocumentKeySet.count == expectedDocumentKeys.count,
+              providedDocumentKeySet.count == providedDocumentKeys.count,
+              providedDocumentKeySet == expectedDocumentKeySet else {
+            throw ForkError.invalidSignature
+        }
 
         for document in bundle.documents {
-            guard expectedDocumentKeys.contains(document.payload.documentPublicKey),
-                  document.payload.authorPublicKey == bundle.manifest.payload.authorPublicKey else {
+            guard document.payload.authorPublicKey == bundle.manifest.payload.authorPublicKey,
+                  try ForkRecordSigner.verify(document) else {
                 throw ForkError.invalidSignature
             }
+        }
+
+        try accept(manifest: bundle.manifest, cachedAt: cachedAt)
+        for document in bundle.documents {
             try accept(document: document, cachedAt: cachedAt)
         }
     }
