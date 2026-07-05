@@ -182,7 +182,7 @@ Notes:
 - The first transport is intentionally local-only: `LoopbackAuthorBundleServer` and `LoopbackAuthorBundleClient` exchange encoded author bundles over HTTP on localhost.
 - This is not real p2p discovery yet, but it proves the app can move signed records through a socket boundary and verify/cache them on the receiving side.
 - The app now uses that localhost transport for its prototype author-to-reader flow.
-- The app also starts a second sample author peer, so the read path can visit another local author address through the same transport.
+- The app also starts a second sample author peer with a stable local identity, so the read path can visit another local author address through the same transport.
 
 ## Milestone 7: Offline-First UX
 

@@ -789,13 +789,13 @@ final class ForkAppModel: ObservableObject {
     }
 
     private func startSampleTransport() throws {
-        let sampleIdentity = ForkIdentity(role: .author)
+        let sampleIdentity = try identityProvider.loadOrCreateAuthorIdentity(account: "sample-author")
         samplePeer.useAuthorIdentity(sampleIdentity)
         sampleAddress = sampleIdentity.address
         samplePlaceAddress = sampleIdentity.address.rawValue
 
-        let fieldNotes = ForkIdentity(role: .document)
-        let about = ForkIdentity(role: .document)
+        let fieldNotes = try identityProvider.loadOrCreateDocumentIdentity(account: "sample-field-notes")
+        let about = try identityProvider.loadOrCreateDocumentIdentity(account: "sample-about")
         try samplePeer.publishDocuments(
             [
                 LocalDocumentPublication(

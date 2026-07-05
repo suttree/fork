@@ -64,6 +64,20 @@ struct ForkCoreTests {
         #expect(first.rawPrivateKey == second.rawPrivateKey)
     }
 
+    @Test("named author identities are stable and separate")
+    func namedAuthorIdentitiesAreStableAndSeparate() throws {
+        let store = MemoryIdentityStore()
+        let provider = StoredIdentityProvider(store: store)
+
+        let firstSample = try provider.loadOrCreateAuthorIdentity(account: "sample")
+        let secondSample = try provider.loadOrCreateAuthorIdentity(account: "sample")
+        let primary = try provider.loadOrCreateAuthorIdentity()
+
+        #expect(firstSample.address == secondSample.address)
+        #expect(firstSample.rawPrivateKey == secondSample.rawPrivateKey)
+        #expect(firstSample.address != primary.address)
+    }
+
     @Test("stored document identity is stable across loads")
     func storedDocumentIdentityIsStable() throws {
         let store = MemoryIdentityStore()
