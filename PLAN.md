@@ -123,6 +123,7 @@ Notes:
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
 - Non-home drafts can now be deleted from the writer before the next signed publish.
 - Publishing now signs document records for every local draft and lists them in the author manifest, with the selected draft as the home document.
+- Republishing after removing a page exports only the documents listed by the latest author manifest.
 - Cached document addresses can now be rendered directly as verified deep links.
 - The sidebar can now show and visit the pages listed by the current verified author manifest.
 

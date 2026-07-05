@@ -431,6 +431,54 @@ struct ForkCoreTests {
         #expect(aboutPage.markdown.contains("A second page."))
     }
 
+    @Test("author bundle drops documents removed from latest manifest")
+    func authorBundleDropsDocumentsRemovedFromLatestManifest() throws {
+        let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
+        let secondDate = Date(timeIntervalSince1970: 1_783_078_500)
+        let authorPeer = LocalPeer(name: "Author")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        let homeIdentity = ForkIdentity(role: .document)
+        let removedIdentity = ForkIdentity(role: .document)
+        try authorPeer.publishDocuments(
+            [
+                LocalDocumentPublication(
+                    identity: homeIdentity,
+                    title: "Home",
+                    markdown: "# Home"
+                ),
+                LocalDocumentPublication(
+                    identity: removedIdentity,
+                    title: "Removed",
+                    markdown: "# Removed"
+                )
+            ],
+            homeDocument: homeIdentity.address,
+            createdAt: firstDate
+        )
+
+        try authorPeer.publishDocuments(
+            [
+                LocalDocumentPublication(
+                    identity: homeIdentity,
+                    title: "Home",
+                    markdown: "# Home\n\nStill here."
+                )
+            ],
+            homeDocument: homeIdentity.address,
+            createdAt: secondDate
+        )
+
+        let bundle = try authorPeer.exportAuthorBundle(authorAddress)
+
+        #expect(bundle.manifest.payload.documents.map(\.address) == [
+            homeIdentity.address.rawValue
+        ])
+        #expect(bundle.documents.map(\.payload.documentPublicKey) == [
+            homeIdentity.address.key
+        ])
+        #expect(!bundle.documents.map(\.payload.documentPublicKey).contains(removedIdentity.address.key))
+    }
+
     @Test("published updates link to previous signed records")
     func publishedUpdatesLinkToPreviousSignedRecords() throws {
         let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
