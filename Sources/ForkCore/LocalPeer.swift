@@ -347,7 +347,7 @@ public final class LocalPeer: @unchecked Sendable {
         }
 
         let address = ForkAddress(kind: .document, publicKeyData: try Base64URL.decode(document.payload.documentPublicKey))
-        let selected = newest(
+        let selected = try newest(
             current: documentsByAddress[address.rawValue],
             incoming: document
         )
@@ -367,7 +367,7 @@ public final class LocalPeer: @unchecked Sendable {
         _ = try validateManifestShape(manifest)
 
         let address = ForkAddress(kind: .author, publicKeyData: try Base64URL.decode(manifest.payload.authorPublicKey))
-        let selected = newest(
+        let selected = try newest(
             current: manifestsByAuthor[address.rawValue],
             incoming: manifest
         )
@@ -580,11 +580,17 @@ public final class LocalPeer: @unchecked Sendable {
     private func newest<T>(
         current: T?,
         incoming: T
-    ) -> T where T: VersionedRecord {
+    ) throws -> T where T: VersionedRecord {
         guard let current else {
             return incoming
         }
-        return incoming.recordVersion > current.recordVersion ? incoming : current
+        guard incoming.recordVersion > current.recordVersion else {
+            return current
+        }
+        guard incoming.previousRecordHash == (try ForkRecordHasher.hash(current)) else {
+            throw ForkError.invalidSignature
+        }
+        return incoming
     }
 }
 
@@ -594,18 +600,27 @@ extension LocalPeer: AuthorBundleSource {
     }
 }
 
-private protocol VersionedRecord {
+private protocol VersionedRecord: Encodable {
     var recordVersion: Int { get }
+    var previousRecordHash: String? { get }
 }
 
 extension SignedAuthorManifest: VersionedRecord {
     fileprivate var recordVersion: Int {
         payload.version
     }
+
+    fileprivate var previousRecordHash: String? {
+        payload.previous
+    }
 }
 
 extension SignedDocumentRecord: VersionedRecord {
     fileprivate var recordVersion: Int {
         payload.version
+    }
+
+    fileprivate var previousRecordHash: String? {
+        payload.previous
     }
 }

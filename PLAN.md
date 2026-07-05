@@ -25,6 +25,7 @@ Status: First in-memory vertical slice implemented.
 - Added signed author manifests and signed document records with stable JSON encoding.
 - Added previous-record hashes so signed updates point back to the records they replace.
 - Same-version signed records no longer replace already cached records.
+- Newer signed records now have to point back to the cached record they replace.
 - Added verification before rendering; tampered records are refused.
 - Signed document verification now rejects malformed author public keys.
 - Signed document verification now rejects malformed document public keys.
@@ -170,6 +171,7 @@ Status: Started
 - Refuse to render invalid records.
 - Link signed updates to the previous signed record hash.
 - Keep existing cached records when another valid record arrives with the same version.
+- Require newer records to link to the cached previous record before replacing it.
 - Validate signed record type and key shape before accepting records into cache.
 - Validate document address key shapes listed by author manifests before accepting them into cache.
 - Validate that manifest page roles agree with the declared home document.

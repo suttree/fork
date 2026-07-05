@@ -1027,6 +1027,49 @@ struct ForkCoreTests {
         #expect(page.source == .cache(firstDate))
     }
 
+    @Test("newer document records must link to cached records")
+    func newerDocumentRecordsMustLinkToCachedRecords() throws {
+        let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
+        let secondDate = Date(timeIntervalSince1970: 1_783_078_500)
+        let authorIdentity = ForkIdentity(role: .author)
+        let documentIdentity = ForkIdentity(role: .document)
+        let firstPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "First",
+            markdown: "# First",
+            version: 1,
+            previous: nil,
+            createdAt: firstDate
+        )
+        let secondPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Second",
+            markdown: "# Second",
+            version: 2,
+            previous: Base64URL.encode(Data(repeating: 1, count: 32)),
+            createdAt: secondDate
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        try peer.accept(
+            document: try ForkRecordSigner.signDocument(payload: firstPayload, with: documentIdentity),
+            cachedAt: firstDate
+        )
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(
+                document: try ForkRecordSigner.signDocument(payload: secondPayload, with: documentIdentity),
+                cachedAt: secondDate
+            )
+        }
+        let page = try peer.render(documentIdentity.address)
+
+        #expect(page.title == "First")
+        #expect(page.version == 1)
+        #expect(page.source == .cache(firstDate))
+    }
+
     @Test("same-version manifests do not replace cached manifests")
     func sameVersionManifestsDoNotReplaceCachedManifests() throws {
         let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
@@ -1102,6 +1145,88 @@ struct ForkCoreTests {
 
         #expect(page.title == "Home")
         #expect(page.documentAddress == homeIdentity.address)
+        #expect(page.source == .cache(firstDate))
+    }
+
+    @Test("newer manifests must link to cached manifests")
+    func newerManifestsMustLinkToCachedManifests() throws {
+        let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
+        let secondDate = Date(timeIntervalSince1970: 1_783_078_500)
+        let authorIdentity = ForkIdentity(role: .author)
+        let homeIdentity = ForkIdentity(role: .document)
+        let firstDocumentPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(homeIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Home",
+            markdown: "# Home",
+            version: 1,
+            previous: nil,
+            createdAt: firstDate
+        )
+        let firstDocument = try ForkRecordSigner.signDocument(
+            payload: firstDocumentPayload,
+            with: homeIdentity
+        )
+        let secondDocumentPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(homeIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Home",
+            markdown: "# Home\n\nSecond document is fine.",
+            version: 2,
+            previous: try ForkRecordHasher.hash(firstDocument),
+            createdAt: secondDate
+        )
+        let firstManifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: homeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "home",
+                    title: "Home"
+                )
+            ],
+            createdAt: firstDate
+        )
+        let secondManifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 2,
+            previous: Base64URL.encode(Data(repeating: 1, count: 32)),
+            homeDocument: homeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "home",
+                    title: "Second Home"
+                )
+            ],
+            createdAt: secondDate
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        try peer.accept(
+            document: firstDocument,
+            cachedAt: firstDate
+        )
+        try peer.accept(
+            manifest: try ForkRecordSigner.signManifest(payload: firstManifestPayload, with: authorIdentity),
+            cachedAt: firstDate
+        )
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(
+                manifest: try ForkRecordSigner.signManifest(payload: secondManifestPayload, with: authorIdentity),
+                cachedAt: secondDate
+            )
+        }
+        try peer.accept(
+            document: try ForkRecordSigner.signDocument(payload: secondDocumentPayload, with: homeIdentity),
+            cachedAt: secondDate
+        )
+        let page = try peer.renderAuthor(authorIdentity.address)
+
+        #expect(page.title == "Home")
         #expect(page.source == .cache(firstDate))
     }
 
