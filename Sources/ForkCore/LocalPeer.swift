@@ -312,22 +312,7 @@ public final class LocalPeer: @unchecked Sendable {
             throw ForkError.invalidSignature
         }
 
-        let homeDocumentAddress: ForkAddress
-        let manifestDocumentAddresses: [ForkAddress]
-        do {
-            homeDocumentAddress = try ForkAddress(bundle.manifest.payload.homeDocument)
-            manifestDocumentAddresses = try bundle.manifest.payload.documents.map { document in
-                try ForkAddress(document.address)
-            }
-        } catch {
-            throw ForkError.invalidSignature
-        }
-
-        guard homeDocumentAddress.kind == .document,
-              manifestDocumentAddresses.allSatisfy({ $0.kind == .document }),
-              manifestDocumentAddresses.contains(homeDocumentAddress) else {
-            throw ForkError.invalidSignature
-        }
+        let manifestDocumentAddresses = try validateManifestShape(bundle.manifest)
 
         let expectedDocumentKeys = manifestDocumentAddresses.map(\.key)
         let expectedDocumentKeySet = Set(expectedDocumentKeys)
@@ -379,6 +364,7 @@ public final class LocalPeer: @unchecked Sendable {
         guard try ForkRecordSigner.verify(manifest) else {
             throw ForkError.invalidSignature
         }
+        _ = try validateManifestShape(manifest)
 
         let address = ForkAddress(kind: .author, publicKeyData: try Base64URL.decode(manifest.payload.authorPublicKey))
         let selected = newest(
@@ -392,6 +378,27 @@ public final class LocalPeer: @unchecked Sendable {
                 try recordCache?.save(manifest: manifest, address: address, cachedAt: cachedAt)
             }
         }
+    }
+
+    private func validateManifestShape(_ manifest: SignedAuthorManifest) throws -> [ForkAddress] {
+        let homeDocumentAddress: ForkAddress
+        let manifestDocumentAddresses: [ForkAddress]
+        do {
+            homeDocumentAddress = try ForkAddress(manifest.payload.homeDocument)
+            manifestDocumentAddresses = try manifest.payload.documents.map { document in
+                try ForkAddress(document.address)
+            }
+        } catch {
+            throw ForkError.invalidSignature
+        }
+
+        guard homeDocumentAddress.kind == .document,
+              manifestDocumentAddresses.allSatisfy({ $0.kind == .document }),
+              manifestDocumentAddresses.contains(homeDocumentAddress) else {
+            throw ForkError.invalidSignature
+        }
+
+        return manifestDocumentAddresses
     }
 
     private func loadCachedRecords() throws {

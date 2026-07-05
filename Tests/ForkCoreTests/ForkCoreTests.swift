@@ -581,6 +581,40 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("direct manifest accept rejects invalid page lists")
+    func directManifestAcceptRejectsInvalidPageLists() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let listedIdentity = ForkIdentity(role: .document)
+        let unlistedHomeIdentity = ForkIdentity(role: .document)
+        let manifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: unlistedHomeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: listedIdentity.address.rawValue,
+                    role: "page",
+                    title: "Listed"
+                )
+            ],
+            createdAt: now
+        )
+        let manifest = try ForkRecordSigner.signManifest(
+            payload: manifestPayload,
+            with: authorIdentity
+        )
+        let readerPeer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try readerPeer.accept(manifest: manifest, cachedAt: now)
+        }
+        #expect(throws: ForkError.missingManifest(authorIdentity.address)) {
+            try readerPeer.renderAuthor(authorIdentity.address)
+        }
+    }
+
     @Test("published updates link to previous signed records")
     func publishedUpdatesLinkToPreviousSignedRecords() throws {
         let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
