@@ -424,6 +424,33 @@ struct ForkCoreTests {
         #expect(try secondStore.loadDraft(id: draft.id) == nil)
     }
 
+    @Test("draft titles are normalized")
+    func draftTitlesAreNormalized() throws {
+        let paddedDraft = DraftDocument(
+            id: "padded",
+            title: "  A Tidy Page  ",
+            markdown: "# A Tidy Page",
+            updatedAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+        let blankDraft = DraftDocument(
+            id: "blank",
+            title: "\n\t ",
+            markdown: "# Untitled Page",
+            updatedAt: Date(timeIntervalSince1970: 1_783_078_401)
+        )
+
+        #expect(paddedDraft.title == "A Tidy Page")
+        #expect(blankDraft.title == "Untitled Page")
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(DraftDocument.self, from: encoder.encode(paddedDraft))
+
+        #expect(decoded.title == "A Tidy Page")
+    }
+
     @Test("file bookmark store survives restart")
     func fileBookmarkStoreSurvivesRestart() throws {
         let rootURL = temporaryDirectory()

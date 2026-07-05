@@ -9,7 +9,7 @@ public struct DraftDocument: Codable, Equatable, Identifiable, Sendable {
 
     public init(id: String, title: String, markdown: String, updatedAt: Date, pageOrder: Int = 0) {
         self.id = id
-        self.title = title
+        self.title = Self.normalizedTitle(title)
         self.markdown = markdown
         self.updatedAt = updatedAt
         self.pageOrder = pageOrder
@@ -26,10 +26,15 @@ public struct DraftDocument: Codable, Equatable, Identifiable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
-        title = try container.decode(String.self, forKey: .title)
+        title = Self.normalizedTitle(try container.decode(String.self, forKey: .title))
         markdown = try container.decode(String.self, forKey: .markdown)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         pageOrder = try container.decodeIfPresent(Int.self, forKey: .pageOrder) ?? 0
+    }
+
+    private static func normalizedTitle(_ title: String) -> String {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedTitle.isEmpty ? "Untitled Page" : trimmedTitle
     }
 }
 

@@ -145,6 +145,7 @@ Notes:
 - The prototype editor can now save edits back to the draft store and publish a signed record from the current draft.
 - The writer now quietly autosaves local title and Markdown edits after a short pause.
 - The writer has an edit/preview switch for local Markdown drafts.
+- Draft titles are now trimmed before saving, with blank titles falling back to `Untitled Page`.
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
 - The writer exposes Add Page from the writing surface, so authors can add pages without hunting through the sidebar.
 - The writer exposes move-up and move-down controls for non-home pages.
