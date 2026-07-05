@@ -250,6 +250,7 @@ struct ForkShell: View {
                     ReaderView(
                         page: page,
                         theme: model.readerTheme,
+                        copyAddress: model.addressCopied,
                         openURL: model.openMarkdownLink
                     )
                         .frame(minWidth: 420)
@@ -262,6 +263,7 @@ struct ForkShell: View {
                         documentAddress: model.draftDocumentAddress,
                         status: model.statusMessage,
                         createPage: model.createDraft,
+                        copyAddress: model.addressCopied,
                         copyMarkdownLink: model.copySelectedDraftMarkdownLink,
                         autosaveDraft: model.autosaveDraft,
                         saveDraft: model.saveDraft,
@@ -663,6 +665,7 @@ struct AddressBar: View {
 struct ReaderView: View {
     let page: RenderedPage
     let theme: ForkReaderTheme
+    let copyAddress: () -> Void
     let openURL: (URL) -> OpenURLAction.Result
 
     var body: some View {
@@ -704,13 +707,13 @@ struct ReaderView: View {
                     Text("Author")
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
-                    AddressCopyRow(address: page.authorAddress.rawValue, theme: theme)
+                    AddressCopyRow(address: page.authorAddress.rawValue, theme: theme, copied: copyAddress)
 
                     Text("Document")
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                         .padding(.top, 8)
-                    AddressCopyRow(address: page.documentAddress.rawValue, theme: theme)
+                    AddressCopyRow(address: page.documentAddress.rawValue, theme: theme, copied: copyAddress)
                 }
                 .padding(.top, 16)
             }
@@ -747,6 +750,7 @@ struct ReaderView: View {
 struct AddressCopyRow: View {
     let address: String
     let theme: ForkReaderTheme
+    let copied: () -> Void
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -758,6 +762,7 @@ struct AddressCopyRow: View {
 
             Button {
                 copyToPasteboard(address)
+                copied()
             } label: {
                 Label("Copy", systemImage: "doc.on.doc")
             }
@@ -787,6 +792,7 @@ struct WriterPreview: View {
     let documentAddress: String
     let status: String
     let createPage: () -> Void
+    let copyAddress: () -> Void
     let copyMarkdownLink: () -> Void
     let autosaveDraft: () -> Void
     let saveDraft: () -> Void
@@ -828,7 +834,7 @@ struct WriterPreview: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 HStack(spacing: 10) {
-                    DraftAddressCopyRow(address: documentAddress)
+                    DraftAddressCopyRow(address: documentAddress, copied: copyAddress)
 
                     Button(action: copyMarkdownLink) {
                         Label("Copy Markdown Link", systemImage: "link")
@@ -913,6 +919,7 @@ struct WriterPreview: View {
 
 struct DraftAddressCopyRow: View {
     let address: String
+    let copied: () -> Void
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -924,6 +931,7 @@ struct DraftAddressCopyRow: View {
 
             Button {
                 copyToPasteboard(address)
+                copied()
             } label: {
                 Label("Copy", systemImage: "doc.on.doc")
             }
