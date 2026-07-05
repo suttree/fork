@@ -130,7 +130,7 @@ struct ForkShell: View {
 
                     ForEach(model.historyEntries) { entry in
                         Button {
-                            model.visit(entry.address)
+                            model.restoreHistoryEntry(entry.index)
                         } label: {
                             SidebarRow(
                                 title: entry.title,
@@ -384,6 +384,7 @@ struct SidebarRow: View {
 
 struct ForkHistoryEntry: Identifiable, Equatable {
     let id: String
+    let index: Int
     let address: String
     let title: String
 
@@ -1403,6 +1404,14 @@ final class ForkAppModel: ObservableObject {
         restoreHistorySelection()
     }
 
+    func restoreHistoryEntry(_ index: Int) {
+        guard history.indices.contains(index) else {
+            return
+        }
+        historyIndex = index
+        restoreHistorySelection()
+    }
+
     func clearHistory() {
         let didClearHistory = !history.isEmpty
         history = []
@@ -1779,8 +1788,10 @@ final class ForkAppModel: ObservableObject {
 
     private func updateHistoryEntries() {
         historyEntries = history.reversed().enumerated().map { offset, address in
-            ForkHistoryEntry(
+            let index = history.count - 1 - offset
+            return ForkHistoryEntry(
                 id: "\(offset)-\(address)",
+                index: index,
                 address: address,
                 title: bookmarkLabel(for: address) ?? historyTitle(for: address)
             )

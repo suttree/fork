@@ -311,6 +311,7 @@ Notes:
 - The address field can copy the current Fork address after trimming accidental whitespace.
 - History entries use verified cached page titles when available.
 - History rows now label author places and document pages instead of showing raw keys inline.
+- History rows now restore their original back/forward position instead of adding duplicate visits.
 - Bookmarks now support local nicknames.
 - Bookmarking can now save author and document addresses.
 - Bookmarking now uses the displayed page address even if the address field has unsent edits.
