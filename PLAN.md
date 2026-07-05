@@ -44,6 +44,7 @@ Status: First in-memory vertical slice implemented.
 - Added copy controls for author and document addresses in the reader.
 - Surfaced live/cached/unavailable status in the browsing address bar.
 - Added a signed place page list in the sidebar from the current author manifest.
+- Added local reader themes for system, paper, and night reading modes.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
@@ -193,6 +194,7 @@ Output:
 Notes:
 
 - The address bar now shows the current browsing status so live, cached, and unavailable states are visible outside the writer panel.
+- The reader has a persisted theme picker with system, paper, and night modes.
 
 ## Milestone 8: Bookmark-Led Browsing
 

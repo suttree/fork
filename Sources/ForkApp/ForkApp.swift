@@ -190,7 +190,7 @@ struct ForkShell: View {
                 Divider()
 
                 HStack(spacing: 0) {
-                    ReaderView(page: page)
+                    ReaderView(page: page, theme: model.readerTheme)
                         .frame(minWidth: 420)
 
                     Divider()
@@ -220,6 +220,14 @@ struct ForkShell: View {
                     Button(action: model.bookmarkCurrentPage) {
                         Label("Bookmark", systemImage: "bookmark")
                     }
+
+                    Picker("Theme", selection: $model.readerTheme) {
+                        ForEach(ForkReaderTheme.allCases) { theme in
+                            Text(theme.title).tag(theme)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 220)
                 }
             }
         }
@@ -252,6 +260,95 @@ struct ForkPlacePage: Identifiable, Equatable {
             return "Home"
         }
         return address
+    }
+}
+
+enum ForkReaderTheme: String, CaseIterable, Identifiable {
+    case system
+    case paper
+    case night
+
+    private static let storageKey = "ForkReaderTheme"
+
+    static var saved: ForkReaderTheme {
+        guard let rawValue = UserDefaults.standard.string(forKey: storageKey) else {
+            return .system
+        }
+        return ForkReaderTheme(rawValue: rawValue) ?? .system
+    }
+
+    var id: String {
+        rawValue
+    }
+
+    var title: String {
+        switch self {
+        case .system:
+            "System"
+        case .paper:
+            "Paper"
+        case .night:
+            "Night"
+        }
+    }
+
+    func save() {
+        UserDefaults.standard.set(rawValue, forKey: Self.storageKey)
+    }
+
+    var readerBackground: Color {
+        switch self {
+        case .system:
+            Color(nsColor: .windowBackgroundColor)
+        case .paper:
+            Color(red: 0.94, green: 0.93, blue: 0.88)
+        case .night:
+            Color(red: 0.08, green: 0.09, blue: 0.08)
+        }
+    }
+
+    var pageBackground: Color {
+        switch self {
+        case .system:
+            Color(nsColor: .textBackgroundColor)
+        case .paper:
+            Color(red: 0.99, green: 0.98, blue: 0.94)
+        case .night:
+            Color(red: 0.12, green: 0.13, blue: 0.12)
+        }
+    }
+
+    var primaryText: Color {
+        switch self {
+        case .system:
+            .primary
+        case .paper:
+            Color(red: 0.16, green: 0.13, blue: 0.10)
+        case .night:
+            Color(red: 0.88, green: 0.90, blue: 0.85)
+        }
+    }
+
+    var secondaryText: Color {
+        switch self {
+        case .system:
+            .secondary
+        case .paper:
+            Color(red: 0.42, green: 0.36, blue: 0.29)
+        case .night:
+            Color(red: 0.62, green: 0.67, blue: 0.60)
+        }
+    }
+
+    var divider: Color {
+        switch self {
+        case .system:
+            Color(nsColor: .separatorColor)
+        case .paper:
+            Color(red: 0.77, green: 0.71, blue: 0.62)
+        case .night:
+            Color(red: 0.28, green: 0.32, blue: 0.28)
+        }
     }
 }
 
@@ -297,6 +394,7 @@ struct AddressBar: View {
 
 struct ReaderView: View {
     let page: RenderedPage
+    let theme: ForkReaderTheme
 
     var body: some View {
         ScrollView {
@@ -304,34 +402,39 @@ struct ReaderView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(page.title)
                         .font(.system(size: 34, weight: .semibold))
+                        .foregroundStyle(theme.primaryText)
                     Text(statusText)
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.secondaryText)
                 }
 
-                Divider()
+                Divider().overlay(theme.divider)
 
                 Text(renderedMarkdown)
                     .font(.body)
+                    .foregroundStyle(theme.primaryText)
                     .textSelection(.enabled)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Author")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                    AddressCopyRow(address: page.authorAddress.rawValue)
+                        .foregroundStyle(theme.secondaryText)
+                    AddressCopyRow(address: page.authorAddress.rawValue, theme: theme)
 
                     Text("Document")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(theme.secondaryText)
                         .padding(.top, 8)
-                    AddressCopyRow(address: page.documentAddress.rawValue)
+                    AddressCopyRow(address: page.documentAddress.rawValue, theme: theme)
                 }
                 .padding(.top, 16)
             }
             .padding(32)
             .frame(maxWidth: 720, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .top)
+            .background(theme.pageBackground)
         }
+        .background(theme.readerBackground)
     }
 
     private var renderedMarkdown: AttributedString {
@@ -350,11 +453,13 @@ struct ReaderView: View {
 
 struct AddressCopyRow: View {
     let address: String
+    let theme: ForkReaderTheme
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(address)
                 .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(theme.secondaryText)
                 .textSelection(.enabled)
                 .lineLimit(2)
 
@@ -430,6 +535,11 @@ final class ForkAppModel: ObservableObject {
     @Published var placePages: [ForkPlacePage] = []
     @Published var drafts: [DraftDocument] = []
     @Published var selectedDraftID = "home"
+    @Published var readerTheme = ForkReaderTheme.saved {
+        didSet {
+            readerTheme.save()
+        }
+    }
     @Published var canGoBack = false
     @Published var canGoForward = false
 
