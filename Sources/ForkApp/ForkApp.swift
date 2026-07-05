@@ -1079,7 +1079,7 @@ final class ForkAppModel: ObservableObject {
         do {
             _ = try persistDraft()
             try loadDraft(id)
-            statusMessage = "Editing page."
+            statusMessage = "Editing \(selectedDraftStatusLabel())."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Page could not be opened."
@@ -1447,6 +1447,13 @@ final class ForkAppModel: ObservableObject {
             return 0
         }
         return (drafts.filter { $0.id != "home" }.map(\.pageOrder).max() ?? 0) + 1
+    }
+
+    private func selectedDraftStatusLabel() -> String {
+        if selectedDraftID == "home" {
+            return "home"
+        }
+        return draftTitle
     }
 
     private func show(_ renderedPage: RenderedPage, displayedAddress: String, addHistory: Bool) {
