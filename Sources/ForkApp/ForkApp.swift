@@ -627,7 +627,7 @@ struct AddressBar: View {
                 }
 
                 Button {
-                    copyToPasteboard(address)
+                    copyToPasteboard(address.trimmingCharacters(in: .whitespacesAndNewlines))
                     copyAddress()
                 } label: {
                     Label("Copy Address", systemImage: "doc.on.doc")

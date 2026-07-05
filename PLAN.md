@@ -304,7 +304,7 @@ Notes:
 - Browsing history now persists across launches.
 - History can now be cleared from the sidebar.
 - The address field can visit cached author and document addresses.
-- The address field can copy the current Fork address.
+- The address field can copy the current Fork address after trimming accidental whitespace.
 - History entries use verified cached page titles when available.
 - History rows now label author places and document pages instead of showing raw keys inline.
 - Bookmarks now support local nicknames.
