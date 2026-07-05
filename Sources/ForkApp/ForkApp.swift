@@ -993,7 +993,7 @@ final class ForkAppModel: ObservableObject {
             statusMessage = statusText(for: renderedPage)
         } catch {
             errorMessage = error.localizedDescription
-            statusMessage = "Address unavailable."
+            statusMessage = unavailableStatusText(for: error)
         }
     }
 
@@ -1228,7 +1228,24 @@ final class ForkAppModel: ObservableObject {
             updateHistoryAvailability()
         } catch {
             errorMessage = error.localizedDescription
-            statusMessage = "History item unavailable."
+            statusMessage = unavailableStatusText(for: error)
+        }
+    }
+
+    private func unavailableStatusText(for error: Error) -> String {
+        guard let forkError = error as? ForkError else {
+            return "Address unavailable."
+        }
+
+        switch forkError {
+        case .invalidAddress:
+            return "That does not look like a Fork address."
+        case .missingManifest, .missingDocument:
+            return "No verified cached copy is available yet."
+        case .invalidSignature:
+            return "Refused a record that did not verify."
+        default:
+            return forkError.localizedDescription
         }
     }
 
