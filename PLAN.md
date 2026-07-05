@@ -83,8 +83,8 @@ Status: First in-memory vertical slice implemented.
 
 Still not done:
 
-- The writer can create, select, edit, and delete local pages, but it still needs a more polished document manager for page roles and ordering.
-- The peer loop is local/in-process, not a real p2p transport.
+- The writer page manager works locally, but still needs product polish around richer page roles and larger places.
+- The peer loop is local/localhost-only, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
 
 ## Milestone 1: Project Scaffold
@@ -166,7 +166,7 @@ Notes:
 - Cached document addresses can now be rendered directly as verified deep links.
 - The sidebar can now show and visit the pages listed by the current verified author manifest.
 - The reader toolbar can now jump from a document page back to the current place's home page.
-- Next: improve page roles and page-management polish.
+- Next: improve richer page roles and larger-place management polish.
 
 ## Milestone 4: Signed Records
 
