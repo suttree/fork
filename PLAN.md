@@ -40,6 +40,7 @@ Status: First in-memory vertical slice implemented.
 - Publishing an added page keeps that page visible after publish instead of bouncing the reader back to Home.
 - Added draft deletion for non-home pages in the writer.
 - Added explicit local page ordering for writer drafts.
+- Legacy drafts without saved order are normalized when the author creates a new page.
 - Page-order controls now disable impossible moves and label non-home pages by position.
 - Added multi-document publishing so the signed author manifest can list every local draft.
 - Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.

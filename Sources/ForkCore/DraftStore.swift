@@ -72,8 +72,7 @@ public struct StoredDraftProvider: Sendable {
     }
 
     public func loadDrafts() throws -> [DraftDocument] {
-        try store.loadDrafts()
-            .sorted(by: Self.sortDrafts)
+        Self.orderedDrafts(try store.loadDrafts())
     }
 
     public func loadDraft(id: String) throws -> DraftDocument? {
@@ -81,6 +80,7 @@ public struct StoredDraftProvider: Sendable {
     }
 
     public func createDraft(now: Date = Date()) throws -> DraftDocument {
+        try normalizePageOrderIfNeeded()
         let draft = DraftDocument(
             id: UUID().uuidString,
             title: "Untitled Page",
@@ -143,10 +143,11 @@ public struct StoredDraftProvider: Sendable {
     }
 
     private func nextPageOrder() throws -> Int {
-        let pageOrders = try store.loadDrafts()
+        let maxPageOrder = try store.loadDrafts()
             .filter { $0.id != "home" }
             .map(\.pageOrder)
-        return (pageOrders.max() ?? 0) + 1
+            .max() ?? 0
+        return maxPageOrder + 1
     }
 
     private func saveOrderedPageDrafts(_ drafts: [DraftDocument]) throws {
@@ -154,6 +155,46 @@ public struct StoredDraftProvider: Sendable {
             var orderedDraft = draft
             orderedDraft.pageOrder = offset + 1
             try store.saveDraft(orderedDraft)
+        }
+    }
+
+    private func normalizePageOrderIfNeeded() throws {
+        let rawDrafts = try store.loadDrafts()
+        let rawOrdersByID = Dictionary(uniqueKeysWithValues: rawDrafts.map { ($0.id, $0.pageOrder) })
+        let orderedDrafts = Self.orderedDrafts(rawDrafts)
+
+        for draft in orderedDrafts where draft.id != "home" {
+            guard rawOrdersByID[draft.id] != draft.pageOrder else {
+                continue
+            }
+            try store.saveDraft(draft)
+        }
+    }
+
+    private static func orderedDrafts(_ drafts: [DraftDocument]) -> [DraftDocument] {
+        let homeDrafts = drafts.filter { $0.id == "home" }
+            .sorted { $0.updatedAt > $1.updatedAt }
+        let pageDrafts = drafts.filter { $0.id != "home" }
+        let orderedPages: [DraftDocument]
+
+        if pageDrafts.allSatisfy({ $0.pageOrder > 0 }) {
+            orderedPages = pageDrafts.sorted(by: sortDrafts)
+        } else if pageDrafts.allSatisfy({ $0.pageOrder <= 0 }) {
+            orderedPages = pageDrafts.sorted { $0.updatedAt > $1.updatedAt }
+        } else {
+            let legacyPages = pageDrafts
+                .filter { $0.pageOrder <= 0 }
+                .sorted { $0.updatedAt > $1.updatedAt }
+            let explicitPages = pageDrafts
+                .filter { $0.pageOrder > 0 }
+                .sorted(by: sortDrafts)
+            orderedPages = legacyPages + explicitPages
+        }
+
+        return homeDrafts + orderedPages.enumerated().map { offset, draft in
+            var orderedDraft = draft
+            orderedDraft.pageOrder = offset + 1
+            return orderedDraft
         }
     }
 }

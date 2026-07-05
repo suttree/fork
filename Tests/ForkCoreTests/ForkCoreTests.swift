@@ -261,6 +261,7 @@ struct ForkCoreTests {
         let drafts = try provider.loadDrafts()
 
         #expect(drafts.map(\.id) == ["home", "later", "middle"])
+        #expect(drafts.map(\.pageOrder) == [0, 1, 2])
     }
 
     @Test("draft provider keeps explicit page order")
@@ -297,6 +298,37 @@ struct ForkCoreTests {
         let drafts = try provider.loadDrafts()
 
         #expect(drafts.map(\.id) == ["home", "middle", "later"])
+    }
+
+    @Test("draft provider appends new drafts after legacy drafts")
+    func draftProviderAppendsNewDraftsAfterLegacyDrafts() throws {
+        let store = MemoryDraftStore()
+        let provider = StoredDraftProvider(store: store)
+        try provider.saveDraft(
+            DraftDocument(
+                id: "older",
+                title: "Older",
+                markdown: "# Older",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_400)
+            )
+        )
+        try provider.saveDraft(
+            DraftDocument(
+                id: "newer",
+                title: "Newer",
+                markdown: "# Newer",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_500)
+            )
+        )
+
+        let created = try provider.createDraft(now: Date(timeIntervalSince1970: 1_783_078_600))
+        let drafts = try provider.loadDrafts()
+
+        #expect(created.pageOrder == 3)
+        #expect(drafts.map(\.id) == ["newer", "older", created.id])
+        #expect(drafts.map(\.pageOrder) == [1, 2, 3])
+        #expect(try store.loadDraft(id: "newer")?.pageOrder == 1)
+        #expect(try store.loadDraft(id: "older")?.pageOrder == 2)
     }
 
     @Test("draft provider creates a new draft")
