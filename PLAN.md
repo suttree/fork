@@ -43,6 +43,7 @@ Status: First in-memory vertical slice implemented.
 - Added local bookmark nicknames so ugly key addresses can have personal labels.
 - Added document-address bookmarks and visible history entries in the sidebar.
 - Added copy controls for author and document addresses in the reader.
+- Added document version and previous-record hints in the reader.
 - Surfaced live/cached/unavailable status in the browsing address bar.
 - Added a signed place page list in the sidebar from the current author manifest.
 - Added local reader themes for system, paper, and night reading modes.

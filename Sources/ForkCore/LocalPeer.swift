@@ -10,6 +10,8 @@ public struct RenderedPage: Equatable, Sendable {
     public var markdown: String
     public var authorAddress: ForkAddress
     public var documentAddress: ForkAddress
+    public var version: Int
+    public var previous: String?
     public var source: Source
 
     public init(
@@ -17,12 +19,16 @@ public struct RenderedPage: Equatable, Sendable {
         markdown: String,
         authorAddress: ForkAddress,
         documentAddress: ForkAddress,
+        version: Int,
+        previous: String?,
         source: Source
     ) {
         self.title = title
         self.markdown = markdown
         self.authorAddress = authorAddress
         self.documentAddress = documentAddress
+        self.version = version
+        self.previous = previous
         self.source = source
     }
 }
@@ -394,6 +400,8 @@ public final class LocalPeer: @unchecked Sendable {
             markdown: document.payload.markdown,
             authorAddress: address,
             documentAddress: documentAddress,
+            version: document.payload.version,
+            previous: document.payload.previous,
             source: source
         )
     }
@@ -419,6 +427,8 @@ public final class LocalPeer: @unchecked Sendable {
             markdown: document.payload.markdown,
             authorAddress: authorAddress,
             documentAddress: address,
+            version: document.payload.version,
+            previous: document.payload.previous,
             source: .cache(cachedAt)
         )
     }

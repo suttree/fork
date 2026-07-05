@@ -406,6 +406,9 @@ struct ReaderView: View {
                     Text(statusText)
                         .font(.callout)
                         .foregroundStyle(theme.secondaryText)
+                    Text(recordText)
+                        .font(.caption)
+                        .foregroundStyle(theme.secondaryText)
                 }
 
                 Divider().overlay(theme.divider)
@@ -448,6 +451,13 @@ struct ReaderView: View {
         case .cache(let date):
             "Showing verified cached version from \(date.formatted(date: .abbreviated, time: .shortened)). Looking for newer signed versions..."
         }
+    }
+
+    private var recordText: String {
+        if let previous = page.previous {
+            return "Document version \(page.version), replacing \(previous.prefix(12))..."
+        }
+        return "Document version \(page.version), first signed version."
     }
 }
 

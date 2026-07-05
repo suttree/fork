@@ -416,6 +416,7 @@ struct ForkCoreTests {
 
         let latestManifest = try authorPeer.exportManifest(authorAddress)
         let latestDocument = try authorPeer.exportDocument(documentIdentity.address)
+        let renderedPage = try authorPeer.renderAuthor(authorAddress)
 
         #expect(first.manifest.payload.previous == nil)
         #expect(first.document.payload.previous == nil)
@@ -425,6 +426,8 @@ struct ForkCoreTests {
         #expect(second.document.payload.version == 2)
         #expect(latestManifest == second.manifest)
         #expect(latestDocument == second.document)
+        #expect(renderedPage.version == second.document.payload.version)
+        #expect(renderedPage.previous == second.document.payload.previous)
     }
 
     @Test("publishing an empty document list is refused")
