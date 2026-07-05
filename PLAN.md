@@ -175,6 +175,7 @@ Notes:
 - The writer shows the selected draft's stable document address with a copy control.
 - The selected draft address area can also copy a ready Markdown link.
 - The writer can copy any local page as a Markdown `fork://` link for building trails between pages.
+- Writer page rows now keep each draft's stable document address available as hover help.
 - Copied Markdown links normalize messy title whitespace before escaping link text.
 - Visiting one of your own signed pages now selects the matching local draft in the writer.
 - Non-home drafts can now be deleted from the writer, with confirmation, before the next signed publish.

@@ -200,6 +200,7 @@ struct ForkShell: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .help(model.draftDocumentAddresses[draft.id] ?? draft.title)
 
                             Spacer()
 
@@ -1000,6 +1001,7 @@ final class ForkAppModel: ObservableObject {
     @Published var historyEntries: [ForkHistoryEntry] = []
     @Published var placePages: [ForkPlacePage] = []
     @Published var drafts: [DraftDocument] = []
+    @Published var draftDocumentAddresses: [String: String] = [:]
     @Published var selectedDraftID = "home"
     @Published var readerTheme = ForkReaderTheme.saved {
         didSet {
@@ -1530,16 +1532,31 @@ final class ForkAppModel: ObservableObject {
 
     private func refreshDrafts() throws {
         drafts = try draftProvider.loadDrafts()
+        refreshDraftDocumentAddresses()
     }
 
     private func refreshDraftDocumentAddress() {
         do {
             let identity = try identityProvider.loadOrCreateDocumentIdentity(account: selectedDraftID)
             draftDocumentAddress = identity.address.rawValue
+            draftDocumentAddresses[selectedDraftID] = identity.address.rawValue
         } catch {
             draftDocumentAddress = ""
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func refreshDraftDocumentAddresses() {
+        var addresses: [String: String] = [:]
+        for draft in drafts {
+            do {
+                let identity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
+                addresses[draft.id] = identity.address.rawValue
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+        draftDocumentAddresses = addresses
     }
 
     private func publicationDocuments(currentDraft: DraftDocument) throws -> [(draftID: String, publication: LocalDocumentPublication)] {
