@@ -142,18 +142,36 @@ struct ForkShell: View {
                     }
 
                     ForEach(model.drafts) { draft in
-                        Button {
-                            model.selectDraft(draft.id)
-                        } label: {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(draft.title)
-                                    Text(draft.id == model.selectedDraftID ? "Editing" : draft.updatedAt.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
+                        HStack(spacing: 8) {
+                            Button {
+                                model.selectDraft(draft.id)
+                            } label: {
+                                Label {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(draft.title)
+                                            .lineLimit(1)
+                                        Text(draft.id == model.selectedDraftID ? "Editing" : draft.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                } icon: {
+                                    Image(systemName: draft.id == model.selectedDraftID ? "square.and.pencil" : "doc")
                                 }
-                            } icon: {
-                                Image(systemName: draft.id == model.selectedDraftID ? "square.and.pencil" : "doc")
+                            }
+                            .buttonStyle(.plain)
+
+                            Spacer()
+
+                            if draft.id != "home" {
+                                Button {
+                                    model.deleteDraft(draft.id)
+                                } label: {
+                                    Label("Delete Page", systemImage: "trash")
+                                }
+                                .labelStyle(.iconOnly)
+                                .buttonStyle(.borderless)
+                                .help("Delete page")
                             }
                         }
                     }
@@ -515,6 +533,23 @@ final class ForkAppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Draft could not be opened."
+        }
+    }
+
+    func deleteDraft(_ id: String) {
+        do {
+            if id != selectedDraftID {
+                _ = try persistDraft()
+            }
+            try draftProvider.deleteDraft(id: id)
+            try refreshDrafts()
+            if id == selectedDraftID {
+                try loadDraft(drafts.first?.id ?? "home")
+            }
+            statusMessage = "Draft deleted. Publish to update your signed place."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Draft could not be deleted."
         }
     }
 

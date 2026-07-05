@@ -189,6 +189,43 @@ struct ForkCoreTests {
         #expect(draft.title == "Untitled Page")
     }
 
+    @Test("draft provider deletes non-home drafts")
+    func draftProviderDeletesNonHomeDrafts() throws {
+        let provider = StoredDraftProvider(store: MemoryDraftStore())
+        let draft = try provider.createDraft(now: Date(timeIntervalSince1970: 1_783_078_400))
+
+        try provider.deleteDraft(id: draft.id)
+
+        #expect(try provider.loadDraft(id: draft.id) == nil)
+    }
+
+    @Test("draft provider refuses to delete home draft")
+    func draftProviderRefusesToDeleteHomeDraft() throws {
+        let provider = StoredDraftProvider(store: MemoryDraftStore())
+
+        #expect(throws: ForkError.protectedDraft("home")) {
+            try provider.deleteDraft(id: "home")
+        }
+    }
+
+    @Test("file draft store deletes persisted draft")
+    func fileDraftStoreDeletesPersistedDraft() throws {
+        let rootURL = temporaryDirectory()
+        let firstStore = FileDraftStore(rootDirectory: rootURL)
+        let draft = DraftDocument(
+            id: "about",
+            title: "About",
+            markdown: "# About",
+            updatedAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+        try firstStore.saveDraft(draft)
+        try firstStore.deleteDraft(id: draft.id)
+
+        let secondStore = FileDraftStore(rootDirectory: rootURL)
+
+        #expect(try secondStore.loadDraft(id: draft.id) == nil)
+    }
+
     @Test("file bookmark store survives restart")
     func fileBookmarkStoreSurvivesRestart() throws {
         let rootURL = temporaryDirectory()

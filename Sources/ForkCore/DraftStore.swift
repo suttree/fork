@@ -18,6 +18,7 @@ public protocol DraftStore: Sendable {
     func loadDrafts() throws -> [DraftDocument]
     func loadDraft(id: String) throws -> DraftDocument?
     func saveDraft(_ draft: DraftDocument) throws
+    func deleteDraft(id: String) throws
 }
 
 public struct StoredDraftProvider: Sendable {
@@ -77,6 +78,13 @@ public struct StoredDraftProvider: Sendable {
     public func saveDraft(_ draft: DraftDocument) throws {
         try store.saveDraft(draft)
     }
+
+    public func deleteDraft(id: String) throws {
+        guard id != "home" else {
+            throw ForkError.protectedDraft(id)
+        }
+        try store.deleteDraft(id: id)
+    }
 }
 
 public final class MemoryDraftStore: DraftStore, @unchecked Sendable {
@@ -94,6 +102,10 @@ public final class MemoryDraftStore: DraftStore, @unchecked Sendable {
 
     public func saveDraft(_ draft: DraftDocument) throws {
         draftsByID[draft.id] = draft
+    }
+
+    public func deleteDraft(id: String) throws {
+        draftsByID[id] = nil
     }
 }
 
@@ -154,6 +166,14 @@ public final class FileDraftStore: DraftStore, @unchecked Sendable {
 
         let data = try encoder.encode(draft)
         try data.write(to: fileURL(for: draft.id), options: [.atomic])
+    }
+
+    public func deleteDraft(id: String) throws {
+        let url = fileURL(for: id)
+        guard fileManager.fileExists(atPath: url.path) else {
+            return
+        }
+        try fileManager.removeItem(at: url)
     }
 
     private func fileURL(for id: String) -> URL {
