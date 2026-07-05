@@ -1270,6 +1270,49 @@ struct ForkCoreTests {
         #expect(renderedPage.previous == second.document.payload.previous)
     }
 
+    @Test("restarted cached author continues signed update chain")
+    func restartedCachedAuthorContinuesSignedUpdateChain() throws {
+        let rootURL = temporaryDirectory()
+        let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
+        let secondDate = Date(timeIntervalSince1970: 1_783_078_500)
+        let firstAuthor = try LocalPeer(
+            name: "Author",
+            recordCache: FileRecordCache(rootDirectory: rootURL)
+        )
+        let authorAddress = firstAuthor.createAuthorIdentity()
+        let documentIdentity = ForkIdentity(role: .document)
+        firstAuthor.useDocumentIdentity(documentIdentity)
+        let documentAddress = documentIdentity.address
+        let authorIdentity = try #require(firstAuthor.authorIdentity)
+
+        try firstAuthor.publishHomePage(
+            title: "Restarted Place",
+            markdown: "# First signed version",
+            createdAt: firstDate
+        )
+
+        let restartedAuthor = try LocalPeer(
+            name: "Restarted Author",
+            recordCache: FileRecordCache(rootDirectory: rootURL)
+        )
+        restartedAuthor.useAuthorIdentity(authorIdentity)
+        restartedAuthor.useDocumentIdentity(documentIdentity)
+        try restartedAuthor.publishHomePage(
+            title: "Restarted Place",
+            markdown: "# Second signed version",
+            createdAt: secondDate
+        )
+
+        let readerPeer = LocalPeer(name: "Reader")
+        try readerPeer.fetchAuthor(authorAddress, from: restartedAuthor, at: secondDate)
+        let page = try readerPeer.renderAuthor(authorAddress)
+
+        #expect(page.documentAddress == documentAddress)
+        #expect(page.version == 2)
+        #expect(page.markdown == "# Second signed version")
+        #expect(page.source == .cache(secondDate))
+    }
+
     @Test("same-version document records do not replace cached records")
     func sameVersionDocumentRecordsDoNotReplaceCachedRecords() throws {
         let firstDate = Date(timeIntervalSince1970: 1_783_078_400)

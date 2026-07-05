@@ -1033,7 +1033,7 @@ final class ForkAppModel: ObservableObject {
     private var draftProvider: StoredDraftProvider
     private var bookmarkStore: any BookmarkStore
     private var readerPeer: LocalPeer
-    private let authorPeer = LocalPeer(name: "Author")
+    private var authorPeer: LocalPeer
     private let samplePeer = LocalPeer(name: "Sample Author")
     private var authorServer: LoopbackAuthorBundleServer?
     private var authorClient: LoopbackAuthorBundleClient?
@@ -1054,9 +1054,11 @@ final class ForkAppModel: ObservableObject {
                 store: FileDraftStore(rootDirectory: forkDraftDirectory())
             )
             bookmarkStore = try FileBookmarkStore(fileURL: forkBookmarksFile())
+            let recordCache = try FileRecordCache(rootDirectory: forkCacheDirectory())
+            authorPeer = try LocalPeer(name: "Author", recordCache: recordCache)
             readerPeer = try LocalPeer(
                 name: "Reader",
-                recordCache: FileRecordCache(rootDirectory: forkCacheDirectory())
+                recordCache: recordCache
             )
 
             try load()
@@ -1064,6 +1066,7 @@ final class ForkAppModel: ObservableObject {
             identityProvider = StoredIdentityProvider(store: MemoryIdentityStore())
             draftProvider = StoredDraftProvider(store: MemoryDraftStore())
             bookmarkStore = MemoryBookmarkStore()
+            authorPeer = LocalPeer(name: "Author")
             readerPeer = LocalPeer(name: "Reader")
             errorMessage = error.localizedDescription
         }

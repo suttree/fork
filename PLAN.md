@@ -45,6 +45,7 @@ Status: First in-memory vertical slice implemented.
 - Added a first-class Add Page action in the writer so authors can grow a place from the writing flow.
 - The writer page manager can publish the place directly after page-list changes.
 - Publishing from any page keeps the `home` draft as the author place home while including added pages in the manifest.
+- The app author peer now restores persisted signed records before publishing so updates continue the signed version chain across launches.
 - Publishing an added page keeps that page visible after publish instead of bouncing the reader back to Home.
 - Added draft deletion for non-home pages in the writer.
 - Added explicit local page ordering for writer drafts.
