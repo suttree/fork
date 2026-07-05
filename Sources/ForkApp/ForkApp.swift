@@ -721,21 +721,7 @@ struct ReaderView: View {
 
                 Divider().overlay(theme.divider)
 
-                VStack(alignment: .leading, spacing: 14) {
-                    ForEach(markdownBlocks) { block in
-                        switch block.kind {
-                        case .heading(let level, let text):
-                            Text(inlineMarkdown(text))
-                                .font(headingFont(for: level))
-                                .fontWeight(.semibold)
-                                .foregroundStyle(theme.primaryText)
-                        case .paragraph(let text):
-                            Text(inlineMarkdown(text))
-                                .font(.body)
-                                .foregroundStyle(theme.primaryText)
-                        }
-                    }
-                }
+                MarkdownBlocksView(markdown: page.markdown, textColor: theme.primaryText)
                 .textSelection(.enabled)
 
                 VStack(alignment: .leading, spacing: 6) {
@@ -777,27 +763,6 @@ struct ReaderView: View {
         .environment(\.openURL, OpenURLAction(handler: openURL))
     }
 
-    private var markdownBlocks: [MarkdownBlock] {
-        MarkdownBlock.parse(page.markdown)
-    }
-
-    private func inlineMarkdown(_ markdown: String) -> AttributedString {
-        (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
-    }
-
-    private func headingFont(for level: Int) -> Font {
-        switch level {
-        case 1:
-            return .system(size: 30, weight: .semibold)
-        case 2:
-            return .title2
-        case 3:
-            return .title3
-        default:
-            return .headline
-        }
-    }
-
     private var statusText: String {
         if hasUnpublishedLocalDraft {
             switch page.source {
@@ -821,6 +786,46 @@ struct ReaderView: View {
             return "Document version \(page.version), replacing \(previous.prefix(12))..."
         }
         return "Document version \(page.version), first signed version."
+    }
+}
+
+private struct MarkdownBlocksView: View {
+    let markdown: String
+    let textColor: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ForEach(MarkdownBlock.parse(markdown)) { block in
+                switch block.kind {
+                case .heading(let level, let text):
+                    Text(inlineMarkdown(text))
+                        .font(headingFont(for: level))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(textColor)
+                case .paragraph(let text):
+                    Text(inlineMarkdown(text))
+                        .font(.body)
+                        .foregroundStyle(textColor)
+                }
+            }
+        }
+    }
+
+    private func inlineMarkdown(_ markdown: String) -> AttributedString {
+        (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
+    }
+
+    private func headingFont(for level: Int) -> Font {
+        switch level {
+        case 1:
+            return .system(size: 30, weight: .semibold)
+        case 2:
+            return .title2
+        case 3:
+            return .title3
+        default:
+            return .headline
+        }
     }
 }
 
@@ -991,8 +996,7 @@ struct WriterPreview: View {
                         }
                 case .preview:
                     ScrollView {
-                        Text(renderedMarkdown)
-                            .font(.body)
+                        MarkdownBlocksView(markdown: markdown, textColor: Color(nsColor: .textColor))
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(12)
@@ -1022,10 +1026,6 @@ struct WriterPreview: View {
             autosaveTask?.cancel()
             flushAutosaveIfNeeded()
         }
-    }
-
-    private var renderedMarkdown: AttributedString {
-        (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
     }
 
     private func scheduleAutosave() {
