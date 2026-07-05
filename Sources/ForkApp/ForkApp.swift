@@ -42,6 +42,12 @@ private func forkDraftDirectory() throws -> URL {
         .appendingPathComponent("Drafts", isDirectory: true)
 }
 
+private func forkBookmarksFile() throws -> URL {
+    forkApplicationSupportDirectory()
+        .appendingPathComponent("Bookmarks", isDirectory: true)
+        .appendingPathComponent("bookmarks.json")
+}
+
 private func forkApplicationSupportDirectory() -> URL {
     let applicationSupport = FileManager.default.urls(
         for: .applicationSupportDirectory,
@@ -57,12 +63,24 @@ struct ForkShell: View {
 
     var body: some View {
         NavigationSplitView {
-            List(selection: .constant("home")) {
+            List {
                 Section("Read") {
-                    Label("Cached Home", systemImage: "doc.text")
-                        .tag("home")
-                    Label("Bookmarks", systemImage: "bookmark")
+                    Button {
+                        model.visitOwnPlace()
+                    } label: {
+                        Label("My Place", systemImage: "doc.text")
+                    }
                     Label("History", systemImage: "clock")
+                }
+
+                Section("Bookmarks") {
+                    ForEach(model.bookmarks) { bookmark in
+                        Button {
+                            model.visit(bookmark.address)
+                        } label: {
+                            Label(bookmark.title, systemImage: "bookmark")
+                        }
+                    }
                 }
 
                 Section("Write") {
@@ -71,39 +89,73 @@ struct ForkShell: View {
             }
             .navigationTitle("Fork")
         } detail: {
-            HStack(spacing: 0) {
-                ReaderView(page: page)
-                    .frame(minWidth: 420)
-
+            VStack(spacing: 0) {
+                AddressBar(
+                    address: $model.addressText,
+                    visit: model.visitAddress,
+                    bookmark: model.bookmarkCurrentPage
+                )
                 Divider()
 
-                WriterPreview(
-                    title: $model.draftTitle,
-                    markdown: $model.draftMarkdown,
-                    status: model.statusMessage,
-                    saveDraft: model.saveDraft,
-                    publish: model.publish
-                )
-                    .frame(minWidth: 300)
+                HStack(spacing: 0) {
+                    ReaderView(page: page)
+                        .frame(minWidth: 420)
+
+                    Divider()
+
+                    WriterPreview(
+                        title: $model.draftTitle,
+                        markdown: $model.draftMarkdown,
+                        status: model.statusMessage,
+                        saveDraft: model.saveDraft,
+                        publish: model.publish
+                    )
+                        .frame(minWidth: 300)
+                }
             }
             .toolbar {
                 ToolbarItemGroup {
-                    Button {
-                    } label: {
+                    Button(action: model.goBack) {
                         Label("Back", systemImage: "chevron.left")
                     }
-                    Button {
-                    } label: {
+                    .disabled(!model.canGoBack)
+
+                    Button(action: model.goForward) {
                         Label("Forward", systemImage: "chevron.right")
                     }
-                    Button {
-                    } label: {
+                    .disabled(!model.canGoForward)
+
+                    Button(action: model.bookmarkCurrentPage) {
                         Label("Bookmark", systemImage: "bookmark")
                     }
                 }
             }
         }
         .frame(minWidth: 920, minHeight: 620)
+    }
+}
+
+struct AddressBar: View {
+    @Binding var address: String
+    let visit: () -> Void
+    let bookmark: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            TextField("fork://author/...", text: $address)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(.body, design: .monospaced))
+                .onSubmit(visit)
+
+            Button(action: visit) {
+                Label("Visit", systemImage: "arrow.right.circle")
+            }
+
+            Button(action: bookmark) {
+                Label("Bookmark", systemImage: "bookmark")
+            }
+        }
+        .padding(12)
     }
 }
 
@@ -213,14 +265,21 @@ final class ForkAppModel: ObservableObject {
     @Published var page: RenderedPage?
     @Published var statusMessage = "Ready."
     @Published var errorMessage: String?
+    @Published var addressText = ""
+    @Published var bookmarks: [ForkBookmark] = []
+    @Published var canGoBack = false
+    @Published var canGoForward = false
 
     private var identityProvider: StoredIdentityProvider
     private var draftProvider: StoredDraftProvider
+    private var bookmarkStore: any BookmarkStore
     private var readerPeer: LocalPeer
     private let authorPeer = LocalPeer(name: "Author")
     private var authorServer: LoopbackAuthorBundleServer?
     private var authorClient: LoopbackAuthorBundleClient?
     private var authorAddress: ForkAddress?
+    private var history: [String] = []
+    private var historyIndex: Int?
 
     init() {
         do {
@@ -228,6 +287,7 @@ final class ForkAppModel: ObservableObject {
             draftProvider = try StoredDraftProvider(
                 store: FileDraftStore(rootDirectory: forkDraftDirectory())
             )
+            bookmarkStore = try FileBookmarkStore(fileURL: forkBookmarksFile())
             readerPeer = try LocalPeer(
                 name: "Reader",
                 recordCache: FileRecordCache(rootDirectory: forkCacheDirectory())
@@ -237,6 +297,7 @@ final class ForkAppModel: ObservableObject {
         } catch {
             identityProvider = StoredIdentityProvider(store: MemoryIdentityStore())
             draftProvider = StoredDraftProvider(store: MemoryDraftStore())
+            bookmarkStore = MemoryBookmarkStore()
             readerPeer = LocalPeer(name: "Reader")
             errorMessage = error.localizedDescription
         }
@@ -264,16 +325,83 @@ final class ForkAppModel: ObservableObject {
             guard let authorAddress else {
                 return
             }
-            page = try readerPeer.renderAuthor(
+            let renderedPage = try readerPeer.renderAuthor(
                 authorAddress,
                 preferLiveSource: authorClient,
                 fetchedAt: now
             )
+            show(renderedPage, addHistory: history.isEmpty)
+            addressText = authorAddress.rawValue
             statusMessage = "Published signed record over localhost."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Publish failed."
         }
+    }
+
+    func visitAddress() {
+        visit(addressText)
+    }
+
+    func visitOwnPlace() {
+        guard let authorAddress else {
+            return
+        }
+        visit(authorAddress.rawValue)
+    }
+
+    func visit(_ rawAddress: String) {
+        do {
+            let address = try ForkAddress(rawAddress.trimmingCharacters(in: .whitespacesAndNewlines))
+            let liveSource: (any AuthorBundleSource)? = address == authorAddress ? authorClient : nil
+            let renderedPage = try readerPeer.renderAuthor(
+                address,
+                preferLiveSource: liveSource,
+                fetchedAt: Date()
+            )
+            show(renderedPage, addHistory: true)
+            statusMessage = renderedPage.source == .live ? "Showing live signed record." : "Showing verified cached record."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Address unavailable."
+        }
+    }
+
+    func bookmarkCurrentPage() {
+        guard let page else {
+            return
+        }
+
+        do {
+            let bookmark = ForkBookmark(
+                address: page.authorAddress.rawValue,
+                title: page.title,
+                createdAt: Date()
+            )
+            bookmarks.removeAll { $0.address == bookmark.address }
+            bookmarks.insert(bookmark, at: 0)
+            try bookmarkStore.saveBookmarks(bookmarks)
+            statusMessage = "Bookmark saved."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Bookmark could not be saved."
+        }
+    }
+
+    func goBack() {
+        guard let index = historyIndex, index > 0 else {
+            return
+        }
+        historyIndex = index - 1
+        restoreHistorySelection()
+    }
+
+    func goForward() {
+        guard let index = historyIndex, index + 1 < history.count else {
+            return
+        }
+        historyIndex = index + 1
+        restoreHistorySelection()
     }
 
     private func load() throws {
@@ -283,6 +411,8 @@ final class ForkAppModel: ObservableObject {
         authorPeer.useDocumentIdentity(documentIdentity)
         authorAddress = authorIdentity.address
         try startAuthorTransport()
+        bookmarks = try bookmarkStore.loadBookmarks()
+        addressText = authorIdentity.address.rawValue
 
         let draft = try draftProvider.loadOrCreateHomeDraft()
         draftTitle = draft.title
@@ -306,5 +436,46 @@ final class ForkAppModel: ObservableObject {
         )
         try draftProvider.saveDraft(draft)
         return draft
+    }
+
+    private func show(_ renderedPage: RenderedPage, addHistory: Bool) {
+        page = renderedPage
+        addressText = renderedPage.authorAddress.rawValue
+
+        if addHistory {
+            if let index = historyIndex, index + 1 < history.count {
+                history = Array(history.prefix(index + 1))
+            }
+
+            if history.last != renderedPage.authorAddress.rawValue {
+                history.append(renderedPage.authorAddress.rawValue)
+            }
+            historyIndex = history.count - 1
+        }
+
+        updateHistoryAvailability()
+    }
+
+    private func restoreHistorySelection() {
+        guard let index = historyIndex else {
+            return
+        }
+
+        do {
+            let address = try ForkAddress(history[index])
+            page = try readerPeer.renderAuthor(address)
+            addressText = address.rawValue
+            statusMessage = "Showing verified cached record."
+            updateHistoryAvailability()
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "History item unavailable."
+        }
+    }
+
+    private func updateHistoryAvailability() {
+        let index = historyIndex ?? 0
+        canGoBack = historyIndex != nil && index > 0
+        canGoForward = historyIndex != nil && index + 1 < history.count
     }
 }

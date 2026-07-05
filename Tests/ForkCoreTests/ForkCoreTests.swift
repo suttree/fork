@@ -144,6 +144,26 @@ struct ForkCoreTests {
         #expect(loaded == draft)
     }
 
+    @Test("file bookmark store survives restart")
+    func fileBookmarkStoreSurvivesRestart() throws {
+        let rootURL = temporaryDirectory()
+        let fileURL = rootURL.appendingPathComponent("bookmarks.json")
+        let firstStore = FileBookmarkStore(fileURL: fileURL)
+        let bookmarks = [
+            ForkBookmark(
+                address: "fork://author/example",
+                title: "Example",
+                createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+            )
+        ]
+        try firstStore.saveBookmarks(bookmarks)
+
+        let secondStore = FileBookmarkStore(fileURL: fileURL)
+        let loaded = try secondStore.loadBookmarks()
+
+        #expect(loaded == bookmarks)
+    }
+
     @Test("verified records survive a cache-backed peer restart")
     func verifiedRecordsSurviveRestart() throws {
         let rootURL = temporaryDirectory()

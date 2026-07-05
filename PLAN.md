@@ -34,6 +34,7 @@ Status: First in-memory vertical slice implemented.
 - Added a byte-oriented bundle codec and source protocol so transports can move encoded signed record bundles.
 - Added a loopback HTTP transport that serves and fetches encoded author bundles over localhost.
 - Wired the prototype app's publish/read path through the loopback transport.
+- Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
@@ -176,7 +177,7 @@ Output:
 
 ## Milestone 8: Bookmark-Led Browsing
 
-Status: Not started
+Status: Started
 
 - Bookmark author addresses.
 - Bookmark document addresses.
@@ -187,6 +188,11 @@ Status: Not started
 Output:
 
 - Fork browsing starts to feel different from URL/domain browsing.
+
+Notes:
+
+- The app now has a Fork address field, bookmark persistence, and back/forward history for visited author places.
+- Bookmarking currently stores author addresses only; document-address bookmarks and local nicknames are still next.
 
 ## First Technical Questions To Resolve
 
