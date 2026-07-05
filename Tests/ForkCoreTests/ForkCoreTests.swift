@@ -492,6 +492,33 @@ struct ForkCoreTests {
         #expect(bookmark.displayTitle == "Original Title")
     }
 
+    @Test("bookmark titles are normalized")
+    func bookmarkTitlesAreNormalized() throws {
+        let paddedBookmark = ForkBookmark(
+            address: "fork://author/example",
+            title: "  Original Title  ",
+            createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+        let blankBookmark = ForkBookmark(
+            address: "fork://doc/example",
+            title: "\n\t ",
+            createdAt: Date(timeIntervalSince1970: 1_783_078_401)
+        )
+
+        #expect(paddedBookmark.title == "Original Title")
+        #expect(paddedBookmark.displayTitle == "Original Title")
+        #expect(blankBookmark.title == "Untitled Bookmark")
+        #expect(blankBookmark.displayTitle == "Untitled Bookmark")
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(ForkBookmark.self, from: encoder.encode(paddedBookmark))
+
+        #expect(decoded.title == "Original Title")
+    }
+
     @Test("bookmark nicknames are normalized")
     func bookmarkNicknamesAreNormalized() throws {
         let paddedBookmark = ForkBookmark(

@@ -319,6 +319,7 @@ Notes:
 - Bookmarking can now save author and document addresses.
 - Bookmarking now uses the displayed page address even if the address field has unsent edits.
 - Bookmark saves now distinguish new bookmarks from updated nicknames.
+- Bookmark titles are now trimmed before saving, with blank titles falling back to `Untitled Bookmark`.
 - Bookmark nicknames are now trimmed before saving, with blank nicknames falling back to page titles.
 - Loaded bookmark identities now follow their Fork addresses instead of stale stored ids.
 - Bookmark saves now immediately show the normalized local display title in the nickname field.

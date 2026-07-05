@@ -10,7 +10,7 @@ public struct ForkBookmark: Codable, Equatable, Identifiable, Sendable {
     public init(address: String, title: String, nickname: String? = nil, createdAt: Date) {
         self.id = address
         self.address = address
-        self.title = title
+        self.title = Self.normalizedTitle(title)
         self.nickname = Self.normalizedNickname(nickname)
         self.createdAt = createdAt
     }
@@ -32,7 +32,7 @@ public struct ForkBookmark: Codable, Equatable, Identifiable, Sendable {
         let address = try container.decode(String.self, forKey: .address)
         self.id = address
         self.address = address
-        self.title = try container.decode(String.self, forKey: .title)
+        self.title = Self.normalizedTitle(try container.decode(String.self, forKey: .title))
         self.nickname = Self.normalizedNickname(try container.decodeIfPresent(String.self, forKey: .nickname))
         self.createdAt = try container.decode(Date.self, forKey: .createdAt)
     }
@@ -49,6 +49,11 @@ public struct ForkBookmark: Codable, Equatable, Identifiable, Sendable {
     private static func normalizedNickname(_ nickname: String?) -> String? {
         let trimmedNickname = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmedNickname.isEmpty ? nil : trimmedNickname
+    }
+
+    private static func normalizedTitle(_ title: String) -> String {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedTitle.isEmpty ? "Untitled Bookmark" : trimmedTitle
     }
 }
 
