@@ -67,6 +67,17 @@ private enum ForkWorkspaceMode: String, CaseIterable, Identifiable {
     }
 }
 
+private enum ForkTypography {
+    static let h1: CGFloat = 42
+    static let h2: CGFloat = 36
+    static let h3: CGFloat = 30
+    static let body: CGFloat = 25
+    static let bodyLineSpacing: CGFloat = 6
+    static let ui: CGFloat = 18
+    static let uiSmall: CGFloat = 15
+    static let mono: CGFloat = 21
+}
+
 struct ForkShell: View {
     @ObservedObject var model: ForkAppModel
     let page: RenderedPage
@@ -133,7 +144,7 @@ struct ForkShell: View {
                 Section("History") {
                     if model.historyEntries.isEmpty {
                         Text("No history yet")
-                            .font(.caption)
+                            .font(.system(size: ForkTypography.uiSmall))
                             .foregroundStyle(model.readerTheme.secondaryText)
                     } else {
                         Button {
@@ -161,7 +172,7 @@ struct ForkShell: View {
                 Section("Bookmarks") {
                     if model.bookmarks.isEmpty {
                         Text("No bookmarks yet")
-                            .font(.caption)
+                            .font(.system(size: ForkTypography.uiSmall))
                             .foregroundStyle(model.readerTheme.secondaryText)
                     } else {
                         ForEach(model.bookmarks) { bookmark in
@@ -359,6 +370,7 @@ struct ForkShell: View {
         }
         .tint(model.readerTheme.accent)
         .preferredColorScheme(model.readerTheme.colorScheme)
+        .font(.system(size: ForkTypography.ui))
         .frame(minWidth: 920, minHeight: 620)
         .confirmationDialog(
             "Delete Page?",
@@ -415,10 +427,11 @@ struct SidebarRow: View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
+                    .font(.system(size: ForkTypography.ui, weight: .semibold))
                     .foregroundStyle(theme.primaryText)
                     .lineLimit(1)
                 Text(subtitle)
-                    .font(.caption2)
+                    .font(.system(size: ForkTypography.uiSmall))
                     .foregroundStyle(theme.secondaryText)
                     .lineLimit(1)
             }
@@ -746,7 +759,7 @@ struct AddressBar: View {
             HStack(spacing: 8) {
                 TextField("fork://author/...", text: $address)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(size: ForkTypography.mono, design: .monospaced))
                     .onSubmit(visit)
 
                 Button(action: visit) {
@@ -767,6 +780,7 @@ struct AddressBar: View {
             HStack(spacing: 8) {
                 TextField("Local nickname", text: $bookmarkLabel)
                     .textFieldStyle(.roundedBorder)
+                    .font(.system(size: ForkTypography.ui))
 
                 Button(action: bookmark) {
                     Label("Bookmark", systemImage: "bookmark")
@@ -775,7 +789,7 @@ struct AddressBar: View {
 
             HStack {
                 Text(status)
-                    .font(.caption)
+                    .font(.system(size: ForkTypography.uiSmall))
                     .foregroundStyle(theme.secondaryText)
                 Spacer()
             }
@@ -817,13 +831,13 @@ struct ReaderView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(page.title)
-                        .font(.system(size: 34, weight: .semibold))
+                        .font(.system(size: ForkTypography.h1, weight: .semibold))
                         .foregroundStyle(theme.primaryText)
                     Text(statusText)
-                        .font(.callout)
+                        .font(.system(size: ForkTypography.ui))
                         .foregroundStyle(theme.secondaryText)
                     Text(recordText)
-                        .font(.caption)
+                        .font(.system(size: ForkTypography.uiSmall))
                         .foregroundStyle(theme.accent)
                 }
 
@@ -834,7 +848,7 @@ struct ReaderView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Author")
-                        .font(.caption)
+                        .font(.system(size: ForkTypography.uiSmall))
                         .foregroundStyle(theme.secondaryText)
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         AddressCopyRow(address: page.authorAddress.rawValue, theme: theme, copied: copyAddress)
@@ -847,7 +861,7 @@ struct ReaderView: View {
                     }
 
                     Text("Document")
-                        .font(.caption)
+                        .font(.system(size: ForkTypography.uiSmall))
                         .foregroundStyle(theme.secondaryText)
                         .padding(.top, 8)
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -863,7 +877,7 @@ struct ReaderView: View {
                 .padding(.top, 16)
             }
             .padding(32)
-            .frame(maxWidth: 720, alignment: .leading)
+            .frame(maxWidth: 860, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .top)
             .background(theme.pageBackground)
         }
@@ -912,8 +926,9 @@ private struct MarkdownBlocksView: View {
                         .foregroundStyle(textColor)
                 case .paragraph(let text):
                     Text(inlineMarkdown(text))
-                        .font(.body)
+                        .font(.system(size: ForkTypography.body))
                         .foregroundStyle(textColor)
+                        .lineSpacing(ForkTypography.bodyLineSpacing)
                 }
             }
         }
@@ -926,13 +941,13 @@ private struct MarkdownBlocksView: View {
     private func headingFont(for level: Int) -> Font {
         switch level {
         case 1:
-            return .system(size: 30, weight: .semibold)
+            return .system(size: ForkTypography.h1, weight: .semibold)
         case 2:
-            return .title2
+            return .system(size: ForkTypography.h2, weight: .semibold)
         case 3:
-            return .title3
+            return .system(size: ForkTypography.h3, weight: .semibold)
         default:
-            return .headline
+            return .system(size: ForkTypography.body, weight: .semibold)
         }
     }
 }
@@ -1002,7 +1017,7 @@ struct AddressCopyRow: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(address)
-                .font(.system(.caption, design: .monospaced))
+                .font(.system(size: ForkTypography.uiSmall, design: .monospaced))
                 .foregroundStyle(theme.secondaryText)
                 .textSelection(.enabled)
                 .lineLimit(2)
@@ -1053,12 +1068,12 @@ struct EditorWorkspace: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(selectedTitle)
-                        .font(.title2)
+                        .font(.system(size: ForkTypography.h3, weight: .semibold))
                         .fontWeight(.semibold)
                         .foregroundStyle(theme.primaryText)
                         .lineLimit(1)
                     Text(mode == .view ? "Viewing your local draft" : "Editing your local draft")
-                        .font(.caption)
+                        .font(.system(size: ForkTypography.uiSmall))
                         .foregroundStyle(theme.secondaryText)
                 }
 
@@ -1079,8 +1094,8 @@ struct EditorWorkspace: View {
                             self.mode = mode
                         } label: {
                             Text(mode.rawValue)
-                                .font(.body.weight(.semibold))
-                                .frame(width: 68, height: 30)
+                                .font(.system(size: ForkTypography.ui, weight: .semibold))
+                                .frame(width: 82, height: 36)
                         }
                         .buttonStyle(.plain)
                         .foregroundStyle(self.mode == mode ? theme.selectedControlText : theme.primaryText)
@@ -1104,7 +1119,7 @@ struct EditorWorkspace: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
                             Text(selectedTitle)
-                                .font(.system(size: 34, weight: .semibold))
+                                .font(.system(size: ForkTypography.h1, weight: .semibold))
                                 .foregroundStyle(theme.primaryText)
                                 .lineLimit(2)
 
@@ -1112,13 +1127,13 @@ struct EditorWorkspace: View {
                                 .textSelection(.enabled)
                         }
                         .padding(.vertical, 30)
-                        .frame(maxWidth: 760, alignment: .leading)
+                        .frame(maxWidth: 860, alignment: .leading)
                         .frame(maxWidth: .infinity, alignment: .top)
                     }
                 case .edit:
                     VStack(alignment: .leading, spacing: 12) {
                         TextField("Title", text: $title)
-                            .font(.title2)
+                            .font(.system(size: ForkTypography.h1, weight: .semibold))
                             .textFieldStyle(.plain)
                             .padding(.horizontal, 2)
                             .foregroundStyle(theme.primaryText)
@@ -1129,7 +1144,7 @@ struct EditorWorkspace: View {
                         Divider().overlay(theme.divider)
 
                         TextEditor(text: $markdown)
-                            .font(.system(.body, design: .monospaced))
+                            .font(.system(size: ForkTypography.body, design: .monospaced))
                             .foregroundStyle(theme.primaryText)
                             .scrollContentBackground(.hidden)
                             .padding(10)
@@ -1139,7 +1154,7 @@ struct EditorWorkspace: View {
                                 scheduleAutosave()
                             }
                     }
-                    .frame(maxWidth: 760, alignment: .leading)
+                    .frame(maxWidth: 860, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .top)
                 }
 
@@ -1147,7 +1162,7 @@ struct EditorWorkspace: View {
 
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text("Document")
-                        .font(.caption)
+                        .font(.system(size: ForkTypography.uiSmall))
                         .foregroundStyle(theme.secondaryText)
 
                     DraftAddressCopyRow(address: documentAddress, theme: theme, copied: copyAddress)
@@ -1162,7 +1177,7 @@ struct EditorWorkspace: View {
                     Spacer()
 
                     Text(status)
-                        .font(.caption)
+                        .font(.system(size: ForkTypography.uiSmall))
                         .foregroundStyle(theme.secondaryText)
                         .lineLimit(1)
                 }
@@ -1218,7 +1233,7 @@ struct DraftAddressCopyRow: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(address.isEmpty ? "Unavailable" : address)
-                .font(.system(.caption, design: .monospaced))
+                .font(.system(size: ForkTypography.uiSmall, design: .monospaced))
                 .foregroundStyle(theme.secondaryText)
                 .lineLimit(1)
                 .textSelection(.enabled)
