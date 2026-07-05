@@ -262,6 +262,7 @@ struct ForkShell: View {
                         documentAddress: model.draftDocumentAddress,
                         status: model.statusMessage,
                         createPage: model.createDraft,
+                        autosaveDraft: model.autosaveDraft,
                         saveDraft: model.saveDraft,
                         publish: model.publish
                     )
@@ -709,9 +710,11 @@ struct WriterPreview: View {
     let documentAddress: String
     let status: String
     let createPage: () -> Void
+    let autosaveDraft: () -> Void
     let saveDraft: () -> Void
     let publish: () -> Void
     @State private var mode: Mode = .edit
+    @State private var autosaveTask: Task<Void, Never>?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -737,6 +740,9 @@ struct WriterPreview: View {
 
             TextField("Title", text: $title)
                 .textFieldStyle(.roundedBorder)
+                .onChange(of: title) {
+                    scheduleAutosave()
+                }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Document Address")
@@ -752,6 +758,9 @@ struct WriterPreview: View {
                         .font(.system(.body, design: .monospaced))
                         .scrollContentBackground(.hidden)
                         .padding(8)
+                        .onChange(of: markdown) {
+                            scheduleAutosave()
+                        }
                 case .preview:
                     ScrollView {
                         Text(renderedMarkdown)
@@ -781,10 +790,27 @@ struct WriterPreview: View {
                 .foregroundStyle(.secondary)
         }
         .padding(24)
+        .onDisappear {
+            autosaveTask?.cancel()
+            autosaveDraft()
+        }
     }
 
     private var renderedMarkdown: AttributedString {
         (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
+    }
+
+    private func scheduleAutosave() {
+        autosaveTask?.cancel()
+        autosaveTask = Task {
+            try? await Task.sleep(nanoseconds: 800_000_000)
+            guard !Task.isCancelled else {
+                return
+            }
+            await MainActor.run {
+                autosaveDraft()
+            }
+        }
     }
 }
 
@@ -895,6 +921,17 @@ final class ForkAppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Page could not be saved."
+        }
+    }
+
+    func autosaveDraft() {
+        do {
+            _ = try persistDraft()
+            try refreshDrafts()
+            statusMessage = "Page autosaved."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Page could not be autosaved."
         }
     }
 
