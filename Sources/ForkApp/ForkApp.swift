@@ -944,7 +944,7 @@ final class ForkAppModel: ObservableObject {
     private var history: [String] = []
     private var historyIndex: Int?
     private var pendingDraftDeletionID: String?
-    private var currentHomePageAddress: String?
+    private var currentPlaceHomeAddress: String?
 
     init() {
         do {
@@ -1167,10 +1167,10 @@ final class ForkAppModel: ObservableObject {
     }
 
     func visitCurrentPlaceHome() {
-        guard let currentHomePageAddress else {
+        guard let currentPlaceHomeAddress else {
             return
         }
-        visit(currentHomePageAddress)
+        visit(currentPlaceHomeAddress)
     }
 
     func toggleSamplePeer() {
@@ -1474,12 +1474,12 @@ final class ForkAppModel: ObservableObject {
     private func updatePlacePages(for renderedPage: RenderedPage) {
         guard let manifest = try? readerPeer.exportManifest(renderedPage.authorAddress) else {
             placePages = []
-            currentHomePageAddress = nil
+            currentPlaceHomeAddress = nil
             canVisitPlaceHome = false
             return
         }
 
-        currentHomePageAddress = manifest.payload.homeDocument
+        currentPlaceHomeAddress = renderedPage.authorAddress.rawValue
         placePages = manifest.payload.documents.map { document in
             ForkPlacePage(
                 id: document.address,
