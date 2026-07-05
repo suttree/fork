@@ -634,6 +634,18 @@ public final class LocalPeer: @unchecked Sendable {
         current: T?,
         incoming: T
     ) throws where T: VersionedRecord {
+        guard incoming.recordVersion > 0 else {
+            throw ForkError.invalidSignature
+        }
+        if incoming.recordVersion == 1 {
+            guard incoming.previousRecordHash == nil else {
+                throw ForkError.invalidSignature
+            }
+        } else {
+            guard incoming.previousRecordHash != nil else {
+                throw ForkError.invalidSignature
+            }
+        }
         guard let current else {
             return
         }

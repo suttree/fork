@@ -1279,7 +1279,7 @@ struct ForkCoreTests {
             title: "Newer",
             markdown: "# Newer",
             version: 2,
-            previous: nil,
+            previous: Base64URL.encode(Data(repeating: 2, count: 32)),
             createdAt: firstDate
         )
         let olderPayload = DocumentRecordPayload(
@@ -1350,6 +1350,33 @@ struct ForkCoreTests {
         #expect(page.title == "First")
         #expect(page.version == 1)
         #expect(page.source == .cache(firstDate))
+    }
+
+    @Test("newer document records must include previous hashes")
+    func newerDocumentRecordsMustIncludePreviousHashes() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let documentIdentity = ForkIdentity(role: .document)
+        let payload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Reset",
+            markdown: "# Reset",
+            version: 2,
+            previous: nil,
+            createdAt: now
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(
+                document: try ForkRecordSigner.signDocument(payload: payload, with: documentIdentity),
+                cachedAt: now
+            )
+        }
+        #expect(throws: ForkError.missingDocument(documentIdentity.address)) {
+            try peer.render(documentIdentity.address)
+        }
     }
 
     @Test("same-version manifests do not replace cached manifests")
@@ -1458,7 +1485,7 @@ struct ForkCoreTests {
         let newerManifestPayload = AuthorManifestPayload(
             authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
             version: 2,
-            previous: nil,
+            previous: Base64URL.encode(Data(repeating: 2, count: 32)),
             homeDocument: homeIdentity.address.rawValue,
             documents: [
                 AuthorManifestDocument(
@@ -1507,6 +1534,38 @@ struct ForkCoreTests {
         #expect(page.documentAddress == homeIdentity.address)
         #expect(page.version == 1)
         #expect(page.source == .cache(firstDate))
+    }
+
+    @Test("newer manifests must include previous hashes")
+    func newerManifestsMustIncludePreviousHashes() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let homeIdentity = ForkIdentity(role: .document)
+        let payload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 2,
+            previous: nil,
+            homeDocument: homeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "home",
+                    title: "Reset"
+                )
+            ],
+            createdAt: now
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(
+                manifest: try ForkRecordSigner.signManifest(payload: payload, with: authorIdentity),
+                cachedAt: now
+            )
+        }
+        #expect(throws: ForkError.missingManifest(authorIdentity.address)) {
+            try peer.renderAuthor(authorIdentity.address)
+        }
     }
 
     @Test("newer manifests must link to cached manifests")
