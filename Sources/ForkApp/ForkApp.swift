@@ -123,6 +123,7 @@ struct ForkShell: View {
                 AddressBar(
                     address: $model.addressText,
                     bookmarkLabel: $model.bookmarkLabel,
+                    status: model.statusMessage,
                     visit: model.visitAddress,
                     bookmark: model.bookmarkCurrentPage
                 )
@@ -175,6 +176,7 @@ struct ForkHistoryEntry: Identifiable, Equatable {
 struct AddressBar: View {
     @Binding var address: String
     @Binding var bookmarkLabel: String
+    let status: String
     let visit: () -> Void
     let bookmark: () -> Void
 
@@ -198,6 +200,13 @@ struct AddressBar: View {
                 Button(action: bookmark) {
                     Label("Bookmark", systemImage: "bookmark")
                 }
+            }
+
+            HStack {
+                Text(status)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
             }
         }
         .padding(12)

@@ -39,6 +39,7 @@ Status: First in-memory vertical slice implemented.
 - Added local bookmark nicknames so ugly key addresses can have personal labels.
 - Added document-address bookmarks and visible history entries in the sidebar.
 - Added copy controls for author and document addresses in the reader.
+- Surfaced live/cached/unavailable status in the browsing address bar.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
@@ -170,7 +171,7 @@ Notes:
 
 ## Milestone 7: Offline-First UX
 
-Status: Not started
+Status: Started
 
 - Show whether the page is live, cached, or unavailable.
 - Show cache age.
@@ -180,6 +181,10 @@ Status: Not started
 Output:
 
 - Offline is treated as a normal reading state.
+
+Notes:
+
+- The address bar now shows the current browsing status so live, cached, and unavailable states are visible outside the writer panel.
 
 ## Milestone 8: Bookmark-Led Browsing
 
