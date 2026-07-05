@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 public struct AuthorManifestDocument: Codable, Equatable, Sendable {
@@ -134,5 +135,12 @@ public enum ForkRecordSigner {
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(value)
+    }
+}
+
+public enum ForkRecordHasher {
+    public static func hash<T: Encodable>(_ value: T) throws -> String {
+        let digest = SHA256.hash(data: try ForkRecordSigner.canonicalData(value))
+        return Base64URL.encode(Data(digest))
     }
 }

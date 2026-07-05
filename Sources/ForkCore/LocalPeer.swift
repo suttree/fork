@@ -131,13 +131,14 @@ public final class LocalPeer: @unchecked Sendable {
 
         let signedDocuments = try documents.map { document in
             let documentIdentity = document.identity
+            let previousDocument = documentsByAddress[documentIdentity.address.rawValue]
             let documentPayload = DocumentRecordPayload(
                 documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
                 authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
                 title: document.title,
                 markdown: document.markdown,
                 version: nextDocumentVersion(for: documentIdentity.address),
-                previous: nil,
+                previous: try previousDocument.map { try ForkRecordHasher.hash($0) },
                 createdAt: createdAt
             )
             return try ForkRecordSigner.signDocument(
@@ -154,10 +155,11 @@ public final class LocalPeer: @unchecked Sendable {
             )
         }
 
+        let previousManifest = manifestsByAuthor[authorIdentity.address.rawValue]
         let manifestPayload = AuthorManifestPayload(
             authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
             version: nextManifestVersion(for: authorIdentity.address),
-            previous: nil,
+            previous: try previousManifest.map { try ForkRecordHasher.hash($0) },
             homeDocument: homeDocument.rawValue,
             documents: manifestDocuments,
             createdAt: createdAt

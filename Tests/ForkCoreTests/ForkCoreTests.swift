@@ -394,6 +394,39 @@ struct ForkCoreTests {
         #expect(aboutPage.markdown.contains("A second page."))
     }
 
+    @Test("published updates link to previous signed records")
+    func publishedUpdatesLinkToPreviousSignedRecords() throws {
+        let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
+        let secondDate = Date(timeIntervalSince1970: 1_783_078_500)
+        let authorPeer = LocalPeer(name: "Author")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        let documentIdentity = ForkIdentity(role: .document)
+        authorPeer.useDocumentIdentity(documentIdentity)
+
+        let first = try authorPeer.publishHomePage(
+            title: "First",
+            markdown: "# First",
+            createdAt: firstDate
+        )
+        let second = try authorPeer.publishHomePage(
+            title: "Second",
+            markdown: "# Second",
+            createdAt: secondDate
+        )
+
+        let latestManifest = try authorPeer.exportManifest(authorAddress)
+        let latestDocument = try authorPeer.exportDocument(documentIdentity.address)
+
+        #expect(first.manifest.payload.previous == nil)
+        #expect(first.document.payload.previous == nil)
+        #expect(second.manifest.payload.previous == (try ForkRecordHasher.hash(first.manifest)))
+        #expect(second.document.payload.previous == (try ForkRecordHasher.hash(first.document)))
+        #expect(second.manifest.payload.version == 2)
+        #expect(second.document.payload.version == 2)
+        #expect(latestManifest == second.manifest)
+        #expect(latestDocument == second.document)
+    }
+
     @Test("publishing an empty document list is refused")
     func publishingEmptyDocumentListIsRefused() throws {
         let authorPeer = LocalPeer(name: "Author")

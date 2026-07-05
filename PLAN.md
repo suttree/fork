@@ -23,6 +23,7 @@ Status: First in-memory vertical slice implemented.
 - Added a Swift Package with a `ForkCore` library and a small SwiftUI `ForkApp`.
 - Added key-derived author and document addresses using CryptoKit signing keys.
 - Added signed author manifests and signed document records with stable JSON encoding.
+- Added previous-record hashes so signed updates point back to the records they replace.
 - Added verification before rendering; tampered records are refused.
 - Added a local two-peer exchange loop that fetches from an author peer, caches verified records on a reader peer, and renders the cached copy when no live author peer is available.
 - Added a local identity store abstraction with a Keychain-backed implementation for the macOS app.
@@ -129,11 +130,13 @@ Status: Started
 - Sign author manifests.
 - Verify signatures before rendering.
 - Refuse to render invalid records.
+- Link signed updates to the previous signed record hash.
 
 Output:
 
 - Fork renders verified Markdown, not arbitrary local text.
 - Invalid signatures fail visibly and calmly.
+- Signed records form a simple auditable update chain.
 
 ## Milestone 5: Local Peer Loop
 
