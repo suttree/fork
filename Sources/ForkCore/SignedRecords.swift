@@ -117,6 +117,9 @@ public enum ForkRecordSigner {
         guard record.payload.type == documentRecordType else {
             return false
         }
+        guard hasValidSigningPublicKey(record.payload.authorPublicKey) else {
+            return false
+        }
         let publicKeyData = try Base64URL.decode(record.payload.documentPublicKey)
         let signature = try Base64URL.decode(record.signature)
         return try ForkIdentity.verify(
@@ -124,6 +127,13 @@ public enum ForkRecordSigner {
             for: canonicalData(record.payload),
             publicKeyData: publicKeyData
         )
+    }
+
+    private static func hasValidSigningPublicKey(_ rawValue: String) -> Bool {
+        guard let publicKeyData = try? Base64URL.decode(rawValue) else {
+            return false
+        }
+        return (try? ForkIdentity.validatePublicKey(publicKeyData)) != nil
     }
 
     public static func verify(_ manifest: SignedAuthorManifest) throws -> Bool {

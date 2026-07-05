@@ -25,6 +25,7 @@ Status: First in-memory vertical slice implemented.
 - Added signed author manifests and signed document records with stable JSON encoding.
 - Added previous-record hashes so signed updates point back to the records they replace.
 - Added verification before rendering; tampered records are refused.
+- Signed document verification now rejects malformed author public keys.
 - Added a local two-peer exchange loop that fetches from an author peer, caches verified records on a reader peer, and renders the cached copy when no live author peer is available.
 - Added a local identity store abstraction with a Keychain-backed implementation for the macOS app.
 - Added stable stored document identity for the demo home page.
@@ -153,6 +154,7 @@ Status: Started
 - Verify signatures before rendering.
 - Refuse to render invalid records.
 - Link signed updates to the previous signed record hash.
+- Validate signed record type and key shape before accepting records into cache.
 
 Output:
 

@@ -65,6 +65,29 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("document records with malformed author keys are refused")
+    func documentRecordsWithMalformedAuthorKeysAreRefused() throws {
+        let document = ForkIdentity(role: .document)
+        let malformedAuthorKey = Base64URL.encode(Data(repeating: 0, count: 31))
+        let payload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(document.publicKeyData),
+            authorPublicKey: malformedAuthorKey,
+            title: "Malformed Author",
+            markdown: "# Malformed Author",
+            version: 1,
+            previous: nil,
+            createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+
+        let record = try ForkRecordSigner.signDocument(payload: payload, with: document)
+        let peer = LocalPeer(name: "Reader")
+
+        #expect(try ForkRecordSigner.verify(record) == false)
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(document: record)
+        }
+    }
+
     @Test("author and document addresses are key-derived")
     func addressesAreKeyDerived() throws {
         let author = ForkIdentity(role: .author)

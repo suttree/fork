@@ -43,4 +43,8 @@ public struct ForkIdentity: Sendable {
         let publicKey = try Curve25519.Signing.PublicKey(rawRepresentation: publicKeyData)
         return publicKey.isValidSignature(signature, for: data)
     }
+
+    public static func validatePublicKey(_ publicKeyData: Data) throws {
+        _ = try Curve25519.Signing.PublicKey(rawRepresentation: publicKeyData)
+    }
 }
