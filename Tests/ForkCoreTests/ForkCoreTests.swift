@@ -361,6 +361,29 @@ struct ForkCoreTests {
         #expect(cachedPage.markdown.contains("Carried as signed records."))
     }
 
+    @Test("cached peer can re-serve verified author bundle")
+    func cachedPeerCanReServeVerifiedAuthorBundle() throws {
+        let firstFetch = Date(timeIntervalSince1970: 1_783_078_400)
+        let secondFetch = Date(timeIntervalSince1970: 1_783_078_500)
+        let authorPeer = LocalPeer(name: "Author")
+        let firstReader = LocalPeer(name: "First Reader")
+        let secondReader = LocalPeer(name: "Second Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Shared Cache",
+            markdown: "# Shared Cache\n\nOne reader can help another.",
+            createdAt: firstFetch
+        )
+
+        try firstReader.fetchAuthor(authorAddress, from: authorPeer, at: firstFetch)
+        try secondReader.fetchAuthor(authorAddress, from: firstReader, at: secondFetch)
+        let cachedPage = try secondReader.renderAuthor(authorAddress)
+
+        #expect(cachedPage.source == .cache(secondFetch))
+        #expect(cachedPage.title == "Shared Cache")
+        #expect(cachedPage.markdown.contains("One reader can help another."))
+    }
+
     @Test("author manifest can publish multiple documents")
     func authorManifestPublishesMultipleDocuments() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)

@@ -35,6 +35,7 @@ Status: First in-memory vertical slice implemented.
 - Added draft deletion for non-home pages in the writer.
 - Added multi-document publishing so the signed author manifest can list every local draft.
 - Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.
+- Verified cached peers can re-serve author bundles to other readers.
 - Added a byte-oriented bundle codec and source protocol so transports can move encoded signed record bundles.
 - Added a loopback HTTP transport that serves and fetches encoded author bundles over localhost.
 - Wired the prototype app's publish/read path through the loopback transport.
@@ -164,6 +165,7 @@ Notes:
 - The local loop is still in-process, but verified records now survive peer restart through `FileRecordCache`.
 - Invalid signatures and malformed cache files are ignored on load rather than rendered.
 - Fetching now goes through encoded `AuthorRecordBundle` data, which is closer to the shape a real transport will move across the network.
+- A reader with verified cached records can now act as an `AuthorBundleSource` for another reader.
 
 ## Milestone 6: First Real P2P Transport
 
