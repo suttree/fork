@@ -642,9 +642,10 @@ public final class LocalPeer: @unchecked Sendable {
                 throw ForkError.invalidSignature
             }
         } else {
-            guard incoming.previousRecordHash != nil else {
+            guard let previousRecordHash = incoming.previousRecordHash else {
                 throw ForkError.invalidSignature
             }
+            try validateRecordHash(previousRecordHash)
         }
         guard let current else {
             return
@@ -653,6 +654,12 @@ public final class LocalPeer: @unchecked Sendable {
             return
         }
         guard incoming.previousRecordHash == (try ForkRecordHasher.hash(current)) else {
+            throw ForkError.invalidSignature
+        }
+    }
+
+    private func validateRecordHash(_ hash: String) throws {
+        guard try Base64URL.decode(hash).count == 32 else {
             throw ForkError.invalidSignature
         }
     }

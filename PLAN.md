@@ -27,6 +27,7 @@ Status: First in-memory vertical slice implemented.
 - Added previous-record hashes so signed updates point back to the records they replace.
 - First signed records now reject unexpected previous hashes.
 - Versioned signed records now reject history resets where later versions omit previous hashes.
+- Previous-record hashes must now decode to SHA-256-sized values before records enter cache.
 - Older signed records no longer replace newer cached records.
 - Same-version signed records no longer replace already cached records.
 - Newer signed records now have to point back to the cached record they replace.
@@ -192,6 +193,7 @@ Status: Started
 - Link signed updates to the previous signed record hash.
 - Reject first record versions that claim a previous signed record hash.
 - Reject later record versions that omit the previous signed record hash.
+- Reject malformed previous record hashes before cache acceptance.
 - Keep existing cached records when an older valid record arrives later.
 - Keep existing cached records when another valid record arrives with the same version.
 - Require newer records to link to the cached previous record before replacing it.

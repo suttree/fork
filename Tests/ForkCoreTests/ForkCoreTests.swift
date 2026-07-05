@@ -1379,6 +1379,33 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("document previous hashes must be valid hashes")
+    func documentPreviousHashesMustBeValidHashes() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let documentIdentity = ForkIdentity(role: .document)
+        let payload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Malformed Previous",
+            markdown: "# Malformed Previous",
+            version: 2,
+            previous: Base64URL.encode(Data(repeating: 1, count: 31)),
+            createdAt: now
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(
+                document: try ForkRecordSigner.signDocument(payload: payload, with: documentIdentity),
+                cachedAt: now
+            )
+        }
+        #expect(throws: ForkError.missingDocument(documentIdentity.address)) {
+            try peer.render(documentIdentity.address)
+        }
+    }
+
     @Test("first document records cannot include previous hashes")
     func firstDocumentRecordsCannotIncludePreviousHashes() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)
@@ -1605,6 +1632,38 @@ struct ForkCoreTests {
                     address: homeIdentity.address.rawValue,
                     role: "home",
                     title: "Reset"
+                )
+            ],
+            createdAt: now
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(
+                manifest: try ForkRecordSigner.signManifest(payload: payload, with: authorIdentity),
+                cachedAt: now
+            )
+        }
+        #expect(throws: ForkError.missingManifest(authorIdentity.address)) {
+            try peer.renderAuthor(authorIdentity.address)
+        }
+    }
+
+    @Test("manifest previous hashes must be valid hashes")
+    func manifestPreviousHashesMustBeValidHashes() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let homeIdentity = ForkIdentity(role: .document)
+        let payload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 2,
+            previous: Base64URL.encode(Data(repeating: 1, count: 31)),
+            homeDocument: homeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "home",
+                    title: "Malformed Previous"
                 )
             ],
             createdAt: now
