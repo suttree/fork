@@ -130,15 +130,17 @@ struct ForkShell: View {
                             Label {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(entry.title)
-                                    Text(entry.address)
+                                        .lineLimit(1)
+                                    Text(entry.subtitle)
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                 }
                             } icon: {
-                                Image(systemName: "clock")
+                                Image(systemName: entry.iconName)
                             }
                         }
+                        .help(entry.address)
                     }
                 }
 
@@ -343,6 +345,32 @@ struct ForkHistoryEntry: Identifiable, Equatable {
     let id: String
     let address: String
     let title: String
+
+    var subtitle: String {
+        switch addressKind {
+        case .author:
+            "Author place"
+        case .document:
+            "Document page"
+        case nil:
+            address
+        }
+    }
+
+    var iconName: String {
+        switch addressKind {
+        case .author:
+            "person.crop.square"
+        case .document:
+            "doc.text"
+        case nil:
+            "clock"
+        }
+    }
+
+    private var addressKind: ForkAddress.Kind? {
+        (try? ForkAddress(address))?.kind
+    }
 }
 
 struct ForkPlacePage: Identifiable, Equatable {

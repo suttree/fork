@@ -273,6 +273,7 @@ Notes:
 - History can now be cleared from the sidebar.
 - The address field can visit cached author and document addresses.
 - History entries use verified cached page titles when available.
+- History rows now label author places and document pages instead of showing raw keys inline.
 - Bookmarks now support local nicknames.
 - Bookmarking can now save author and document addresses.
 - Bookmark rows show whether a saved address is an author place or document page.
