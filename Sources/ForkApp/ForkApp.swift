@@ -1497,7 +1497,9 @@ final class ForkAppModel: ObservableObject {
     }
 
     private func markdownLinkTitle(_ title: String) -> String {
-        title
+        title.components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "[", with: "\\[")
             .replacingOccurrences(of: "]", with: "\\]")
