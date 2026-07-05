@@ -1226,6 +1226,7 @@ final class ForkAppModel: ObservableObject {
             bookmarks.removeAll { $0.address == bookmark.address }
             bookmarks.insert(bookmark, at: 0)
             try bookmarkStore.saveBookmarks(bookmarks)
+            updateHistoryEntries()
             statusMessage = didUpdateBookmark ? "Bookmark updated." : "Bookmark saved."
         } catch {
             errorMessage = error.localizedDescription
@@ -1240,6 +1241,7 @@ final class ForkAppModel: ObservableObject {
             if let page {
                 bookmarkLabel = bookmarkLabel(for: addressText) ?? page.title
             }
+            updateHistoryEntries()
             statusMessage = "Bookmark deleted."
         } catch {
             errorMessage = error.localizedDescription

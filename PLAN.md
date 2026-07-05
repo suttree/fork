@@ -281,6 +281,7 @@ Notes:
 - Bookmark saves now distinguish new bookmarks from updated nicknames.
 - Bookmark rows show whether a saved address is an author place or document page.
 - Bookmark rows can now delete saved entries.
+- History rows refresh immediately when bookmark nicknames are saved or deleted.
 - The place page list now labels home and current pages clearly while keeping raw addresses available as help text.
 - The reader Home action now returns through the author place address, not just the home document deep link.
 
