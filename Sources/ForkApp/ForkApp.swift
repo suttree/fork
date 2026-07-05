@@ -383,11 +383,11 @@ enum ForkReaderTheme: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .system:
-            "System"
+            "Classic"
         case .paper:
-            "Paper"
+            "Starship"
         case .night:
-            "Night"
+            "NvChad"
         }
     }
 
@@ -398,55 +398,77 @@ enum ForkReaderTheme: String, CaseIterable, Identifiable {
     var readerBackground: Color {
         switch self {
         case .system:
-            Color(nsColor: .windowBackgroundColor)
+            Color(red: 0.91, green: 0.94, blue: 0.96)
         case .paper:
-            Color(red: 0.94, green: 0.93, blue: 0.88)
+            Color(red: 0.07, green: 0.08, blue: 0.13)
         case .night:
-            Color(red: 0.08, green: 0.09, blue: 0.08)
+            Color(red: 0.05, green: 0.06, blue: 0.08)
         }
     }
 
     var pageBackground: Color {
         switch self {
         case .system:
-            Color(nsColor: .textBackgroundColor)
+            Color(red: 1.00, green: 0.98, blue: 0.94)
         case .paper:
-            Color(red: 0.99, green: 0.98, blue: 0.94)
+            Color(red: 0.10, green: 0.11, blue: 0.18)
         case .night:
-            Color(red: 0.12, green: 0.13, blue: 0.12)
+            Color(red: 0.09, green: 0.10, blue: 0.14)
         }
     }
 
     var primaryText: Color {
         switch self {
         case .system:
-            .primary
+            Color(red: 0.12, green: 0.16, blue: 0.20)
         case .paper:
-            Color(red: 0.16, green: 0.13, blue: 0.10)
+            Color(red: 0.88, green: 0.94, blue: 1.00)
         case .night:
-            Color(red: 0.88, green: 0.90, blue: 0.85)
+            Color(red: 0.82, green: 0.86, blue: 0.96)
         }
     }
 
     var secondaryText: Color {
         switch self {
         case .system:
-            .secondary
+            Color(red: 0.38, green: 0.42, blue: 0.48)
         case .paper:
-            Color(red: 0.42, green: 0.36, blue: 0.29)
+            Color(red: 0.64, green: 0.72, blue: 0.86)
         case .night:
-            Color(red: 0.62, green: 0.67, blue: 0.60)
+            Color(red: 0.55, green: 0.62, blue: 0.76)
         }
     }
 
     var divider: Color {
         switch self {
         case .system:
-            Color(nsColor: .separatorColor)
+            Color(red: 0.92, green: 0.48, blue: 0.42)
         case .paper:
-            Color(red: 0.77, green: 0.71, blue: 0.62)
+            Color(red: 0.21, green: 0.84, blue: 0.88)
         case .night:
-            Color(red: 0.28, green: 0.32, blue: 0.28)
+            Color(red: 0.74, green: 0.48, blue: 0.96)
+        }
+    }
+
+    var accent: Color {
+        switch self {
+        case .system:
+            Color(red: 0.10, green: 0.55, blue: 0.78)
+        case .paper:
+            Color(red: 0.39, green: 0.92, blue: 0.86)
+        case .night:
+            Color(red: 0.58, green: 0.91, blue: 0.48)
+        }
+    }
+
+    var accentSecondary: Color {
+        switch self {
+        case .system:
+            Color(red: 0.91, green: 0.24, blue: 0.45)
+        case .paper:
+            Color(red: 0.96, green: 0.63, blue: 0.23)
+        case .night:
+            Color(red: 0.96, green: 0.43, blue: 0.72)
         }
     }
 }
@@ -498,6 +520,19 @@ struct ReaderView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                HStack(spacing: 8) {
+                    Capsule()
+                        .fill(theme.accent)
+                        .frame(width: 54, height: 5)
+                    Capsule()
+                        .fill(theme.accentSecondary)
+                        .frame(width: 22, height: 5)
+                    Capsule()
+                        .fill(theme.divider)
+                        .frame(width: 10, height: 5)
+                }
+                .padding(.bottom, 2)
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text(page.title)
                         .font(.system(size: 34, weight: .semibold))
@@ -507,7 +542,7 @@ struct ReaderView: View {
                         .foregroundStyle(theme.secondaryText)
                     Text(recordText)
                         .font(.caption)
-                        .foregroundStyle(theme.secondaryText)
+                        .foregroundStyle(theme.accent)
                 }
 
                 Divider().overlay(theme.divider)
