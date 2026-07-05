@@ -70,7 +70,26 @@ struct ForkShell: View {
                     } label: {
                         Label("My Place", systemImage: "doc.text")
                     }
-                    Label("History", systemImage: "clock")
+                }
+
+                Section("History") {
+                    ForEach(model.historyEntries) { entry in
+                        Button {
+                            model.visit(entry.address)
+                        } label: {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(entry.title)
+                                    Text(entry.address)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                            } icon: {
+                                Image(systemName: "clock")
+                            }
+                        }
+                    }
                 }
 
                 Section("Bookmarks") {
@@ -144,6 +163,12 @@ struct ForkShell: View {
         }
         .frame(minWidth: 920, minHeight: 620)
     }
+}
+
+struct ForkHistoryEntry: Identifiable, Equatable {
+    let id: String
+    let address: String
+    let title: String
 }
 
 struct AddressBar: View {
@@ -287,6 +312,7 @@ final class ForkAppModel: ObservableObject {
     @Published var addressText = ""
     @Published var bookmarkLabel = ""
     @Published var bookmarks: [ForkBookmark] = []
+    @Published var historyEntries: [ForkHistoryEntry] = []
     @Published var canGoBack = false
     @Published var canGoForward = false
 
@@ -402,8 +428,9 @@ final class ForkAppModel: ObservableObject {
         }
 
         do {
+            let address = try ForkAddress(addressText.trimmingCharacters(in: .whitespacesAndNewlines))
             let bookmark = ForkBookmark(
-                address: page.authorAddress.rawValue,
+                address: address.rawValue,
                 title: page.title,
                 nickname: bookmarkLabel,
                 createdAt: Date()
@@ -484,6 +511,7 @@ final class ForkAppModel: ObservableObject {
             historyIndex = history.count - 1
         }
 
+        updateHistoryEntries()
         updateHistoryAvailability()
     }
 
@@ -496,7 +524,9 @@ final class ForkAppModel: ObservableObject {
             let address = try ForkAddress(history[index])
             page = try readerPeer.render(address)
             addressText = address.rawValue
+            bookmarkLabel = bookmarkLabel(for: address.rawValue) ?? page?.title ?? ""
             statusMessage = "Showing verified cached record."
+            updateHistoryEntries()
             updateHistoryAvailability()
         } catch {
             errorMessage = error.localizedDescription
@@ -512,5 +542,28 @@ final class ForkAppModel: ObservableObject {
 
     private func bookmarkLabel(for address: String) -> String? {
         bookmarks.first { $0.address == address }?.displayTitle
+    }
+
+    private func updateHistoryEntries() {
+        historyEntries = history.reversed().enumerated().map { offset, address in
+            ForkHistoryEntry(
+                id: "\(offset)-\(address)",
+                address: address,
+                title: bookmarkLabel(for: address) ?? historyTitle(for: address)
+            )
+        }
+    }
+
+    private func historyTitle(for address: String) -> String {
+        guard let forkAddress = try? ForkAddress(address) else {
+            return address
+        }
+
+        switch forkAddress.kind {
+        case .author:
+            return "Author place"
+        case .document:
+            return "Document"
+        }
     }
 }

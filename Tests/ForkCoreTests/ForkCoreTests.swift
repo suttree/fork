@@ -155,6 +155,12 @@ struct ForkCoreTests {
                 title: "Example",
                 nickname: "Local Example",
                 createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+            ),
+            ForkBookmark(
+                address: "fork://doc/example-document",
+                title: "Example Document",
+                nickname: "Local Document",
+                createdAt: Date(timeIntervalSince1970: 1_783_078_401)
             )
         ]
         try firstStore.saveBookmarks(bookmarks)
@@ -164,6 +170,7 @@ struct ForkCoreTests {
 
         #expect(loaded == bookmarks)
         #expect(loaded.first?.displayTitle == "Local Example")
+        #expect(loaded.last?.address.hasPrefix("fork://doc/") == true)
     }
 
     @Test("bookmark display title falls back to page title")
