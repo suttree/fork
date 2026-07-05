@@ -115,6 +115,14 @@ struct ForkShell: View {
                 }
 
                 Section("History") {
+                    if !model.historyEntries.isEmpty {
+                        Button {
+                            model.clearHistory()
+                        } label: {
+                            Label("Clear History", systemImage: "trash")
+                        }
+                    }
+
                     ForEach(model.historyEntries) { entry in
                         Button {
                             model.visit(entry.address)
@@ -1157,6 +1165,15 @@ final class ForkAppModel: ObservableObject {
         }
         historyIndex = index + 1
         restoreHistorySelection()
+    }
+
+    func clearHistory() {
+        history = []
+        historyIndex = nil
+        saveHistory()
+        updateHistoryEntries()
+        updateHistoryAvailability()
+        statusMessage = "History cleared."
     }
 
     private func load() throws {

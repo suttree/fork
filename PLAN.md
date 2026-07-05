@@ -58,6 +58,7 @@ Status: First in-memory vertical slice implemented.
 - Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
 - The app now restores the last visited Fork address on launch when it can be rendered.
 - Browsing history now persists across launches as verified Fork addresses.
+- History can now be cleared from the sidebar.
 - History entries now prefer verified cached page titles over generic address labels.
 - Added verified cached rendering for `fork://doc/...` document deep links.
 - Added local bookmark nicknames so ugly key addresses can have personal labels.
@@ -264,6 +265,7 @@ Notes:
 - The app now has a Fork address field, bookmark persistence, and back/forward history for visited author places.
 - The app remembers the last visited Fork address across launches.
 - Browsing history now persists across launches.
+- History can now be cleared from the sidebar.
 - The address field can visit cached author and document addresses.
 - History entries use verified cached page titles when available.
 - Bookmarks now support local nicknames.
