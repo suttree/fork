@@ -280,7 +280,6 @@ struct ForkShell: View {
                         copyAddress: model.addressCopied,
                         copyMarkdownLink: model.copySelectedDraftMarkdownLink,
                         autosaveDraft: model.autosaveDraft,
-                        saveDraft: model.saveDraft,
                         publish: model.publish
                     )
                 case .discover:
@@ -1044,7 +1043,6 @@ struct EditorWorkspace: View {
     let copyAddress: () -> Void
     let copyMarkdownLink: () -> Void
     let autosaveDraft: () -> Void
-    let saveDraft: () -> Void
     let publish: () -> Void
     @State private var mode: Mode = .view
     @State private var autosaveTask: Task<Void, Never>?
@@ -1068,10 +1066,6 @@ struct EditorWorkspace: View {
 
                 Button(action: createPage) {
                     Label("Add Page", systemImage: "plus")
-                }
-
-                Button(action: saveDraft) {
-                    Label("Save Draft", systemImage: "tray.and.arrow.down")
                 }
 
                 Button(action: publish) {
@@ -1323,20 +1317,6 @@ final class ForkAppModel: ObservableObject {
             authorPeer = LocalPeer(name: "Author")
             readerPeer = LocalPeer(name: "Reader")
             errorMessage = error.localizedDescription
-        }
-    }
-
-    func saveDraft() {
-        do {
-            _ = try persistDraft()
-            try refreshDrafts()
-            refreshUnpublishedDraftState()
-            statusMessage = hasUnpublishedLocalDraft
-                ? "Page saved locally. Publish signed place to update the reader."
-                : "Page saved."
-        } catch {
-            errorMessage = error.localizedDescription
-            statusMessage = "Page could not be saved."
         }
     }
 

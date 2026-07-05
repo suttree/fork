@@ -234,6 +234,7 @@ Notes:
 - Started the Editor/Discover split in the app shell.
 - Editor now owns the main workspace by default and has a modal View/Edit switch for the selected local page.
 - Reader themes now apply across the app chrome, sidebar, Discover, and Editor surfaces instead of only styling rendered pages.
+- Editor drafts now save automatically as edits are made, without a visible Save Draft button.
 
 ## Milestone 4: Signed Records
 
