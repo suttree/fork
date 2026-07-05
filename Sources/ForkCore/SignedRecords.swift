@@ -94,6 +94,9 @@ public struct SignedDocumentRecord: Codable, Equatable, Sendable {
 }
 
 public enum ForkRecordSigner {
+    private static let authorManifestType = "fork.authorManifest"
+    private static let documentRecordType = "fork.documentRecord"
+
     public static func signDocument(
         payload: DocumentRecordPayload,
         with identity: ForkIdentity
@@ -111,6 +114,9 @@ public enum ForkRecordSigner {
     }
 
     public static func verify(_ record: SignedDocumentRecord) throws -> Bool {
+        guard record.payload.type == documentRecordType else {
+            return false
+        }
         let publicKeyData = try Base64URL.decode(record.payload.documentPublicKey)
         let signature = try Base64URL.decode(record.signature)
         return try ForkIdentity.verify(
@@ -121,6 +127,9 @@ public enum ForkRecordSigner {
     }
 
     public static func verify(_ manifest: SignedAuthorManifest) throws -> Bool {
+        guard manifest.payload.type == authorManifestType else {
+            return false
+        }
         let publicKeyData = try Base64URL.decode(manifest.payload.authorPublicKey)
         let signature = try Base64URL.decode(manifest.signature)
         return try ForkIdentity.verify(

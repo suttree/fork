@@ -41,6 +41,30 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("document records with the wrong type are refused")
+    func documentRecordsWithWrongTypeAreRefused() throws {
+        let author = ForkIdentity(role: .author)
+        let document = ForkIdentity(role: .document)
+        var payload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(document.publicKeyData),
+            authorPublicKey: Base64URL.encode(author.publicKeyData),
+            title: "Wrong Type",
+            markdown: "# Wrong Type",
+            version: 1,
+            previous: nil,
+            createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+        payload.type = "fork.authorManifest"
+
+        let record = try ForkRecordSigner.signDocument(payload: payload, with: document)
+        let peer = LocalPeer(name: "Reader")
+
+        #expect(try ForkRecordSigner.verify(record) == false)
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(document: record)
+        }
+    }
+
     @Test("author and document addresses are key-derived")
     func addressesAreKeyDerived() throws {
         let author = ForkIdentity(role: .author)
@@ -607,6 +631,41 @@ struct ForkCoreTests {
         )
         let readerPeer = LocalPeer(name: "Reader")
 
+        #expect(throws: ForkError.invalidSignature) {
+            try readerPeer.accept(manifest: manifest, cachedAt: now)
+        }
+        #expect(throws: ForkError.missingManifest(authorIdentity.address)) {
+            try readerPeer.renderAuthor(authorIdentity.address)
+        }
+    }
+
+    @Test("manifests with the wrong type are refused")
+    func manifestsWithWrongTypeAreRefused() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let homeIdentity = ForkIdentity(role: .document)
+        var manifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: homeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "home",
+                    title: "Home"
+                )
+            ],
+            createdAt: now
+        )
+        manifestPayload.type = "fork.documentRecord"
+        let manifest = try ForkRecordSigner.signManifest(
+            payload: manifestPayload,
+            with: authorIdentity
+        )
+        let readerPeer = LocalPeer(name: "Reader")
+
+        #expect(try ForkRecordSigner.verify(manifest) == false)
         #expect(throws: ForkError.invalidSignature) {
             try readerPeer.accept(manifest: manifest, cachedAt: now)
         }
