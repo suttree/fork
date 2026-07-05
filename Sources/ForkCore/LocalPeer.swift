@@ -153,6 +153,15 @@ public final class LocalPeer: @unchecked Sendable {
         return try renderCachedAuthorFromCache(address)
     }
 
+    public func render(_ address: ForkAddress) throws -> RenderedPage {
+        switch address.kind {
+        case .author:
+            try renderCachedAuthorFromCache(address)
+        case .document:
+            try renderCachedDocument(address)
+        }
+    }
+
     public func exportDocument(_ address: ForkAddress) throws -> SignedDocumentRecord {
         guard let document = documentsByAddress[address.rawValue] else {
             throw ForkError.missingDocument(address)
@@ -322,6 +331,31 @@ public final class LocalPeer: @unchecked Sendable {
             authorAddress: address,
             documentAddress: documentAddress,
             source: source
+        )
+    }
+
+    private func renderCachedDocument(_ address: ForkAddress) throws -> RenderedPage {
+        guard let document = documentsByAddress[address.rawValue] else {
+            throw ForkError.missingDocument(address)
+        }
+
+        guard try ForkRecordSigner.verify(document),
+              document.payload.documentPublicKey == address.key else {
+            throw ForkError.invalidSignature
+        }
+
+        let authorAddress = ForkAddress(
+            kind: .author,
+            publicKeyData: try Base64URL.decode(document.payload.authorPublicKey)
+        )
+        let cachedAt = cachedAtByAddress[address.rawValue] ?? Date()
+
+        return RenderedPage(
+            title: document.payload.title,
+            markdown: document.payload.markdown,
+            authorAddress: authorAddress,
+            documentAddress: address,
+            source: .cache(cachedAt)
         )
     }
 

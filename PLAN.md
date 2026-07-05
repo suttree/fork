@@ -35,6 +35,7 @@ Status: First in-memory vertical slice implemented.
 - Added a loopback HTTP transport that serves and fetches encoded author bundles over localhost.
 - Wired the prototype app's publish/read path through the loopback transport.
 - Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
+- Added verified cached rendering for `fork://doc/...` document deep links.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
@@ -102,6 +103,7 @@ Notes:
 - The demo home document now loads or creates its document identity through the same app identity provider, so its `fork://doc/...` address is stable across launches.
 - The demo home draft now loads from a draft store when one exists, otherwise it creates the default Markdown draft.
 - The prototype editor can now save edits back to the draft store and publish a signed record from the current draft.
+- Cached document addresses can now be rendered directly as verified deep links.
 
 ## Milestone 4: Signed Records
 
@@ -192,6 +194,7 @@ Output:
 Notes:
 
 - The app now has a Fork address field, bookmark persistence, and back/forward history for visited author places.
+- The address field can visit cached author and document addresses.
 - Bookmarking currently stores author addresses only; document-address bookmarks and local nicknames are still next.
 
 ## First Technical Questions To Resolve

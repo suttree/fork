@@ -196,6 +196,29 @@ struct ForkCoreTests {
         #expect(cachedPage.markdown.contains("Still here offline."))
     }
 
+    @Test("document address renders verified cached document")
+    func documentAddressRendersCachedDocument() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorPeer = LocalPeer(name: "Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Deep Link",
+            markdown: "# Deep Link\n\nDocument address works.",
+            createdAt: now
+        )
+
+        try readerPeer.fetchAuthor(authorAddress, from: authorPeer, at: now)
+        let manifest = try readerPeer.exportManifest(authorAddress)
+        let documentAddress = try ForkAddress(manifest.payload.homeDocument)
+        let page = try readerPeer.render(documentAddress)
+
+        #expect(page.authorAddress == authorAddress)
+        #expect(page.documentAddress == documentAddress)
+        #expect(page.source == .cache(now))
+        #expect(page.markdown.contains("Document address works."))
+    }
+
     @Test("author bundles exchange signed records without shared peer state")
     func authorBundleExchange() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)

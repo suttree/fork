@@ -330,7 +330,11 @@ final class ForkAppModel: ObservableObject {
                 preferLiveSource: authorClient,
                 fetchedAt: now
             )
-            show(renderedPage, addHistory: history.isEmpty)
+            show(
+                renderedPage,
+                displayedAddress: authorAddress.rawValue,
+                addHistory: history.isEmpty
+            )
             addressText = authorAddress.rawValue
             statusMessage = "Published signed record over localhost."
         } catch {
@@ -353,13 +357,18 @@ final class ForkAppModel: ObservableObject {
     func visit(_ rawAddress: String) {
         do {
             let address = try ForkAddress(rawAddress.trimmingCharacters(in: .whitespacesAndNewlines))
-            let liveSource: (any AuthorBundleSource)? = address == authorAddress ? authorClient : nil
-            let renderedPage = try readerPeer.renderAuthor(
-                address,
-                preferLiveSource: liveSource,
-                fetchedAt: Date()
-            )
-            show(renderedPage, addHistory: true)
+            let renderedPage: RenderedPage
+            if address.kind == .author {
+                let liveSource: (any AuthorBundleSource)? = address == authorAddress ? authorClient : nil
+                renderedPage = try readerPeer.renderAuthor(
+                    address,
+                    preferLiveSource: liveSource,
+                    fetchedAt: Date()
+                )
+            } else {
+                renderedPage = try readerPeer.render(address)
+            }
+            show(renderedPage, displayedAddress: address.rawValue, addHistory: true)
             statusMessage = renderedPage.source == .live ? "Showing live signed record." : "Showing verified cached record."
         } catch {
             errorMessage = error.localizedDescription
@@ -438,17 +447,17 @@ final class ForkAppModel: ObservableObject {
         return draft
     }
 
-    private func show(_ renderedPage: RenderedPage, addHistory: Bool) {
+    private func show(_ renderedPage: RenderedPage, displayedAddress: String, addHistory: Bool) {
         page = renderedPage
-        addressText = renderedPage.authorAddress.rawValue
+        addressText = displayedAddress
 
         if addHistory {
             if let index = historyIndex, index + 1 < history.count {
                 history = Array(history.prefix(index + 1))
             }
 
-            if history.last != renderedPage.authorAddress.rawValue {
-                history.append(renderedPage.authorAddress.rawValue)
+            if history.last != displayedAddress {
+                history.append(displayedAddress)
             }
             historyIndex = history.count - 1
         }
@@ -463,7 +472,7 @@ final class ForkAppModel: ObservableObject {
 
         do {
             let address = try ForkAddress(history[index])
-            page = try readerPeer.renderAuthor(address)
+            page = try readerPeer.render(address)
             addressText = address.rawValue
             statusMessage = "Showing verified cached record."
             updateHistoryAvailability()
