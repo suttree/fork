@@ -39,6 +39,7 @@ Status: First in-memory vertical slice implemented.
 - Added a loopback HTTP transport that serves and fetches encoded author bundles over localhost.
 - Wired the prototype app's publish/read path through the loopback transport.
 - Added a second sample author place in the app, fetched over its own loopback peer.
+- Added a sample-author online/offline toggle to demonstrate verified cached reading in the app.
 - Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
 - Added verified cached rendering for `fork://doc/...` document deep links.
 - Added local bookmark nicknames so ugly key addresses can have personal labels.
@@ -200,6 +201,7 @@ Output:
 Notes:
 
 - The address bar now shows the current browsing status so live, cached, and unavailable states are visible outside the writer panel.
+- The sample author can be taken offline in the app after a live visit, so the cached-reader path is visible without leaving the prototype.
 - The reader has a persisted theme picker with system, paper, and night modes.
 
 ## Milestone 8: Bookmark-Led Browsing

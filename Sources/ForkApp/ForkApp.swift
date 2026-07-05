@@ -78,6 +78,15 @@ struct ForkShell: View {
                         } label: {
                             Label("Sample Place", systemImage: "network")
                         }
+
+                        Button {
+                            model.toggleSamplePeer()
+                        } label: {
+                            Label(
+                                model.samplePeerOnline ? "Take Sample Offline" : "Bring Sample Online",
+                                systemImage: model.samplePeerOnline ? "wifi.slash" : "antenna.radiowaves.left.and.right"
+                            )
+                        }
                     }
                 }
 
@@ -561,6 +570,7 @@ final class ForkAppModel: ObservableObject {
     @Published var canGoBack = false
     @Published var canGoForward = false
     @Published var samplePlaceAddress: String?
+    @Published var samplePeerOnline = false
 
     private var identityProvider: StoredIdentityProvider
     private var draftProvider: StoredDraftProvider
@@ -704,6 +714,21 @@ final class ForkAppModel: ObservableObject {
         visit(sampleAddress.rawValue)
     }
 
+    func toggleSamplePeer() {
+        do {
+            if samplePeerOnline {
+                stopSampleServer()
+                statusMessage = "Sample author is offline. Verified cached copies remain readable."
+            } else {
+                try startSampleServer()
+                statusMessage = "Sample author is online over localhost."
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Sample author could not change network state."
+        }
+    }
+
     func visit(_ rawAddress: String) {
         do {
             let address = try ForkAddress(rawAddress.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -821,10 +846,28 @@ final class ForkAppModel: ObservableObject {
             createdAt: Date(timeIntervalSince1970: 1_783_078_400)
         )
 
+        try startSampleServer()
+    }
+
+    private func startSampleServer() throws {
+        stopSampleServer()
         let server = try LoopbackAuthorBundleServer(peer: samplePeer)
-        try server.start()
-        sampleServer = server
-        sampleClient = try LoopbackAuthorBundleClient(baseURL: server.baseURL)
+        do {
+            try server.start()
+            sampleServer = server
+            sampleClient = try LoopbackAuthorBundleClient(baseURL: server.baseURL)
+            samplePeerOnline = true
+        } catch {
+            samplePeerOnline = false
+            throw error
+        }
+    }
+
+    private func stopSampleServer() {
+        sampleServer?.stop()
+        sampleServer = nil
+        sampleClient = nil
+        samplePeerOnline = false
     }
 
     private func liveSource(for address: ForkAddress) -> (any AuthorBundleSource)? {

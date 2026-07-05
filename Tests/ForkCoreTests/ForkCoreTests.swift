@@ -600,6 +600,43 @@ struct ForkCoreTests {
         #expect(secondPage.title == "Second Place")
     }
 
+    @Test("loopback render falls back to cache when live source is unavailable")
+    func loopbackRenderFallsBackToCacheWhenLiveSourceIsUnavailable() throws {
+        let liveDate = Date(timeIntervalSince1970: 1_783_078_400)
+        let cachedDate = Date(timeIntervalSince1970: 1_783_078_500)
+        let authorPeer = LocalPeer(name: "Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Sometimes Offline",
+            markdown: "# Sometimes Offline",
+            createdAt: liveDate
+        )
+
+        let server = try LoopbackAuthorBundleServer(peer: authorPeer)
+        try server.start()
+        let client = try LoopbackAuthorBundleClient(baseURL: server.baseURL)
+        let livePage = try readerPeer.renderAuthor(
+            authorAddress,
+            preferLiveSource: client,
+            fetchedAt: liveDate
+        )
+        server.stop()
+        let unavailableClient = LoopbackAuthorBundleClient(
+            baseURL: URL(string: "http://127.0.0.1:1")!
+        )
+
+        let cachedPage = try readerPeer.renderAuthor(
+            authorAddress,
+            preferLiveSource: unavailableClient,
+            fetchedAt: cachedDate
+        )
+
+        #expect(livePage.source == .live)
+        #expect(cachedPage.source == .cache(liveDate))
+        #expect(cachedPage.title == "Sometimes Offline")
+    }
+
     @Test("author bundles reject records for the wrong author")
     func authorBundleRejectsWrongAuthor() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)
