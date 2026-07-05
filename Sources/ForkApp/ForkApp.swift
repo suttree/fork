@@ -308,6 +308,45 @@ extension ForkBookmark {
     }
 }
 
+private enum ForkSamplePlace {
+    static let authorAccount = "sample-author"
+    static let fieldNotesAccount = "sample-field-notes"
+    static let aboutAccount = "sample-about"
+    static let publishedAt = Date(timeIntervalSince1970: 1_783_078_400)
+
+    static func authorIdentity(using provider: StoredIdentityProvider) throws -> ForkIdentity {
+        try provider.loadOrCreateAuthorIdentity(account: authorAccount)
+    }
+
+    static func publications(using provider: StoredIdentityProvider) throws -> (homeDocument: ForkAddress, documents: [LocalDocumentPublication]) {
+        let fieldNotes = try provider.loadOrCreateDocumentIdentity(account: fieldNotesAccount)
+        let about = try provider.loadOrCreateDocumentIdentity(account: aboutAccount)
+        return (
+            homeDocument: fieldNotes.address,
+            documents: [
+                LocalDocumentPublication(
+                    identity: fieldNotes,
+                    title: "Field Notes from Elsewhere",
+                    markdown: """
+                    # Field Notes from Elsewhere
+
+                    This page belongs to a second local Fork author. It is fetched over the same loopback transport, verified, cached, and then rendered like any other place.
+                    """
+                ),
+                LocalDocumentPublication(
+                    identity: about,
+                    title: "About This Sample",
+                    markdown: """
+                    # About This Sample
+
+                    Fork addresses are intentionally strange. Browsing should lean on bookmarks, history, trails, and local names instead of nice domains.
+                    """
+                )
+            ]
+        )
+    }
+}
+
 enum ForkReaderTheme: String, CaseIterable, Identifiable {
     case system
     case paper
@@ -842,36 +881,16 @@ final class ForkAppModel: ObservableObject {
     }
 
     private func startSampleTransport() throws {
-        let sampleIdentity = try identityProvider.loadOrCreateAuthorIdentity(account: "sample-author")
+        let sampleIdentity = try ForkSamplePlace.authorIdentity(using: identityProvider)
         samplePeer.useAuthorIdentity(sampleIdentity)
         sampleAddress = sampleIdentity.address
         samplePlaceAddress = sampleIdentity.address.rawValue
 
-        let fieldNotes = try identityProvider.loadOrCreateDocumentIdentity(account: "sample-field-notes")
-        let about = try identityProvider.loadOrCreateDocumentIdentity(account: "sample-about")
+        let publication = try ForkSamplePlace.publications(using: identityProvider)
         try samplePeer.publishDocuments(
-            [
-                LocalDocumentPublication(
-                    identity: fieldNotes,
-                    title: "Field Notes from Elsewhere",
-                    markdown: """
-                    # Field Notes from Elsewhere
-
-                    This page belongs to a second local Fork author. It is fetched over the same loopback transport, verified, cached, and then rendered like any other place.
-                    """
-                ),
-                LocalDocumentPublication(
-                    identity: about,
-                    title: "About This Sample",
-                    markdown: """
-                    # About This Sample
-
-                    Fork addresses are intentionally strange. Browsing should lean on bookmarks, history, trails, and local names instead of nice domains.
-                    """
-                )
-            ],
-            homeDocument: fieldNotes.address,
-            createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+            publication.documents,
+            homeDocument: publication.homeDocument,
+            createdAt: ForkSamplePlace.publishedAt
         )
 
         try startSampleServer()
