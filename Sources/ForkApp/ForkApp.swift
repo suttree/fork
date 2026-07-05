@@ -261,6 +261,7 @@ struct ForkShell: View {
                         page: page,
                         theme: model.readerTheme,
                         copyAddress: model.addressCopied,
+                        copyPlaceMarkdownLink: model.copyCurrentPlaceMarkdownLink,
                         copyMarkdownLink: model.copyCurrentPageMarkdownLink,
                         openURL: model.openMarkdownLink
                     )
@@ -677,6 +678,7 @@ struct ReaderView: View {
     let page: RenderedPage
     let theme: ForkReaderTheme
     let copyAddress: () -> Void
+    let copyPlaceMarkdownLink: () -> Void
     let copyMarkdownLink: () -> Void
     let openURL: (URL) -> OpenURLAction.Result
 
@@ -719,7 +721,15 @@ struct ReaderView: View {
                     Text("Author")
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
-                    AddressCopyRow(address: page.authorAddress.rawValue, theme: theme, copied: copyAddress)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        AddressCopyRow(address: page.authorAddress.rawValue, theme: theme, copied: copyAddress)
+
+                        Button(action: copyPlaceMarkdownLink) {
+                            Label("Copy Place Markdown Link", systemImage: "link.badge.plus")
+                        }
+                        .labelStyle(.iconOnly)
+                        .help("Copy place Markdown link")
+                    }
 
                     Text("Document")
                         .font(.caption)
@@ -1264,6 +1274,18 @@ final class ForkAppModel: ObservableObject {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(link, forType: .string)
         statusMessage = "Markdown link copied for \(page.title)."
+    }
+
+    func copyCurrentPlaceMarkdownLink() {
+        guard let page else {
+            statusMessage = "Place link could not be copied."
+            return
+        }
+
+        let link = "[\(markdownLinkTitle(page.title))](\(page.authorAddress.rawValue))"
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(link, forType: .string)
+        statusMessage = "Place link copied for \(page.title)."
     }
 
     func visitOwnPlace() {
