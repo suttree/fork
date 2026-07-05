@@ -116,7 +116,11 @@ struct ForkShell: View {
                 }
 
                 Section("History") {
-                    if !model.historyEntries.isEmpty {
+                    if model.historyEntries.isEmpty {
+                        Text("No history yet")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
                         Button {
                             model.clearHistory()
                         } label: {
@@ -1349,12 +1353,13 @@ final class ForkAppModel: ObservableObject {
     }
 
     func clearHistory() {
+        let didClearHistory = !history.isEmpty
         history = []
         historyIndex = nil
         saveHistory()
         updateHistoryEntries()
         updateHistoryAvailability()
-        statusMessage = "History cleared."
+        statusMessage = didClearHistory ? "History cleared." : "History was already empty."
     }
 
     private func load() throws {

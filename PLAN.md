@@ -303,6 +303,7 @@ Notes:
 - The app remembers the last visited Fork address across launches.
 - Browsing history now persists across launches.
 - History can now be cleared from the sidebar.
+- Empty history now has a quiet visible state.
 - The address field can visit cached author and document addresses.
 - The address field can copy the current Fork address after trimming accidental whitespace.
 - History entries use verified cached page titles when available.
