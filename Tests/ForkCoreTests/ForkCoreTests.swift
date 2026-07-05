@@ -247,6 +247,32 @@ struct ForkCoreTests {
         #expect(cachedPage.markdown.contains("Fetched through source bytes."))
     }
 
+    @Test("loopback transport fetches author bundle over localhost")
+    func loopbackTransportFetchesAuthorBundle() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorPeer = LocalPeer(name: "Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Loopback Place",
+            markdown: "# Loopback Place\n\nFetched over localhost.",
+            createdAt: now
+        )
+
+        let server = try LoopbackAuthorBundleServer(peer: authorPeer)
+        try server.start()
+        defer {
+            server.stop()
+        }
+
+        let client = try LoopbackAuthorBundleClient(baseURL: server.baseURL)
+        try readerPeer.fetchAuthor(authorAddress, from: client, at: now)
+        let cachedPage = try readerPeer.renderAuthor(authorAddress)
+
+        #expect(cachedPage.source == .cache(now))
+        #expect(cachedPage.markdown.contains("Fetched over localhost."))
+    }
+
     @Test("author bundles reject records for the wrong author")
     func authorBundleRejectsWrongAuthor() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)
