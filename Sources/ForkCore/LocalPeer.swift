@@ -277,6 +277,32 @@ public final class LocalPeer: @unchecked Sendable {
         expectedAuthor: ForkAddress,
         cachedAt: Date = Date()
     ) throws {
+        try importAuthorBundle(
+            bundle,
+            expectedAuthor: expectedAuthor,
+            cachedAt: cachedAt,
+            persist: true
+        )
+    }
+
+    private func importAuthorBundle(
+        _ bundle: AuthorRecordBundle,
+        expectedAuthor: ForkAddress,
+        cachedAt: Date,
+        persist: Bool
+    ) throws {
+        try validateAuthorBundle(bundle, expectedAuthor: expectedAuthor)
+
+        try accept(manifest: bundle.manifest, cachedAt: cachedAt, persist: persist)
+        for document in bundle.documents {
+            try accept(document: document, cachedAt: cachedAt, persist: persist)
+        }
+    }
+
+    private func validateAuthorBundle(
+        _ bundle: AuthorRecordBundle,
+        expectedAuthor: ForkAddress
+    ) throws {
         guard expectedAuthor.kind == .author,
               bundle.manifest.payload.authorPublicKey == expectedAuthor.key else {
             throw ForkError.invalidSignature
@@ -319,11 +345,6 @@ public final class LocalPeer: @unchecked Sendable {
                   try ForkRecordSigner.verify(document) else {
                 throw ForkError.invalidSignature
             }
-        }
-
-        try accept(manifest: bundle.manifest, cachedAt: cachedAt)
-        for document in bundle.documents {
-            try accept(document: document, cachedAt: cachedAt)
         }
     }
 
@@ -378,21 +399,70 @@ public final class LocalPeer: @unchecked Sendable {
             return
         }
 
-        for cachedManifest in try recordCache.loadManifests() {
-            try? accept(
-                manifest: cachedManifest.record,
-                cachedAt: cachedManifest.cachedAt,
-                persist: false
-            )
-        }
+        let cachedDocumentsByKey = try loadVerifiedCachedDocuments(from: recordCache)
 
-        for cachedDocument in try recordCache.loadDocuments() {
-            try? accept(
-                document: cachedDocument.record,
-                cachedAt: cachedDocument.cachedAt,
-                persist: false
-            )
+        for cachedManifest in try recordCache.loadManifests() {
+            do {
+                guard try ForkRecordSigner.verify(cachedManifest.record) else {
+                    continue
+                }
+
+                let authorAddress = ForkAddress(
+                    kind: .author,
+                    publicKeyData: try Base64URL.decode(cachedManifest.record.payload.authorPublicKey)
+                )
+                let documentAddresses = try cachedManifest.record.payload.documents.map { document in
+                    try ForkAddress(document.address)
+                }
+                let documents = documentAddresses.compactMap { documentAddress in
+                    cachedDocumentsByKey[documentAddress.key]?.record
+                }
+                let bundle = AuthorRecordBundle(
+                    manifest: cachedManifest.record,
+                    documents: documents
+                )
+
+                try validateAuthorBundle(bundle, expectedAuthor: authorAddress)
+                try accept(
+                    manifest: cachedManifest.record,
+                    cachedAt: cachedManifest.cachedAt,
+                    persist: false
+                )
+                for documentAddress in documentAddresses {
+                    guard let cachedDocument = cachedDocumentsByKey[documentAddress.key] else {
+                        throw ForkError.invalidSignature
+                    }
+                    try accept(
+                        document: cachedDocument.record,
+                        cachedAt: cachedDocument.cachedAt,
+                        persist: false
+                    )
+                }
+            } catch {
+                continue
+            }
         }
+    }
+
+    private func loadVerifiedCachedDocuments(
+        from recordCache: any RecordCache
+    ) throws -> [String: CachedDocumentRecord] {
+        var cachedDocumentsByKey: [String: CachedDocumentRecord] = [:]
+        for cachedDocument in try recordCache.loadDocuments() {
+            do {
+                guard try ForkRecordSigner.verify(cachedDocument.record) else {
+                    continue
+                }
+                let address = ForkAddress(
+                    kind: .document,
+                    publicKeyData: try Base64URL.decode(cachedDocument.record.payload.documentPublicKey)
+                )
+                cachedDocumentsByKey[address.key] = cachedDocument
+            } catch {
+                continue
+            }
+        }
+        return cachedDocumentsByKey
     }
 
     private func renderCachedAuthorFromCache(_ address: ForkAddress) throws -> RenderedPage {

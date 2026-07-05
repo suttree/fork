@@ -308,9 +308,14 @@ struct ForkCoreTests {
             recordCache: FileRecordCache(rootDirectory: rootURL)
         )
         let cachedPage = try restartedReader.renderAuthor(authorAddress)
+        let manifest = try restartedReader.exportManifest(authorAddress)
+        let documentAddress = try ForkAddress(manifest.payload.homeDocument)
+        let cachedDocumentPage = try restartedReader.render(documentAddress)
 
         #expect(cachedPage.source == .cache(now))
+        #expect(cachedDocumentPage.source == .cache(now))
         #expect(cachedPage.markdown.contains("Still here offline."))
+        #expect(cachedDocumentPage.markdown.contains("Still here offline."))
     }
 
     @Test("document address renders verified cached document")
@@ -867,8 +872,49 @@ struct ForkCoreTests {
             recordCache: FileRecordCache(rootDirectory: rootURL)
         )
 
-        #expect(throws: ForkError.missingDocument(documentAddress)) {
+        #expect(throws: ForkError.missingManifest(authorAddress)) {
             try restartedReader.renderAuthor(authorAddress)
+        }
+    }
+
+    @Test("incomplete cache bundles are ignored on restart")
+    func incompleteCacheBundlesAreIgnoredOnRestart() throws {
+        let rootURL = temporaryDirectory()
+        let cache = FileRecordCache(rootDirectory: rootURL)
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+
+        let authorPeer = LocalPeer(name: "Author")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Cached Place",
+            markdown: "# Cached Place\n\nNeeds its document.",
+            createdAt: now
+        )
+
+        let readerPeer = try LocalPeer(name: "Reader", recordCache: cache)
+        _ = try readerPeer.renderAuthor(
+            authorAddress,
+            preferLivePeer: authorPeer,
+            fetchedAt: now
+        )
+
+        let manifest = try readerPeer.exportManifest(authorAddress)
+        let documentAddress = try ForkAddress(manifest.payload.homeDocument)
+        let documentURL = rootURL
+            .appendingPathComponent("documents", isDirectory: true)
+            .appendingPathComponent("\(documentAddress.key).json")
+        try FileManager.default.removeItem(at: documentURL)
+
+        let restartedReader = try LocalPeer(
+            name: "Restarted Reader",
+            recordCache: FileRecordCache(rootDirectory: rootURL)
+        )
+
+        #expect(throws: ForkError.missingManifest(authorAddress)) {
+            try restartedReader.renderAuthor(authorAddress)
+        }
+        #expect(throws: ForkError.missingDocument(documentAddress)) {
+            try restartedReader.render(documentAddress)
         }
     }
 
