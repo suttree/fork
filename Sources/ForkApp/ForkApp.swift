@@ -75,6 +75,7 @@ private enum ForkTypography {
     static let bodyLineSpacing: CGFloat = 6
     static let ui: CGFloat = 14
     static let uiSmall: CGFloat = 11
+    static let headerControl: CGFloat = 12
     static let mono: CGFloat = 17
 }
 
@@ -1081,11 +1082,15 @@ struct EditorWorkspace: View {
 
                 Button(action: createPage) {
                     Label("Add Page", systemImage: "plus")
+                        .font(.system(size: ForkTypography.headerControl, weight: .semibold))
                 }
+                .controlSize(.small)
 
                 Button(action: publish) {
                     Label("Publish Signed Place", systemImage: "signature")
+                        .font(.system(size: ForkTypography.headerControl, weight: .semibold))
                 }
+                .controlSize(.small)
                 .buttonStyle(.borderedProminent)
 
                 HStack(spacing: 2) {
@@ -1094,18 +1099,18 @@ struct EditorWorkspace: View {
                             self.mode = mode
                         } label: {
                             Text(mode.rawValue)
-                                .font(.system(size: ForkTypography.ui, weight: .semibold))
-                                .frame(width: 82, height: 36)
+                                .font(.system(size: ForkTypography.headerControl, weight: .semibold))
+                                .frame(width: 62, height: 28)
                         }
                         .buttonStyle(.plain)
                         .foregroundStyle(self.mode == mode ? theme.selectedControlText : theme.primaryText)
                         .background(self.mode == mode ? theme.accent : theme.editorSurface)
-                        .clipShape(RoundedRectangle(cornerRadius: 7))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
                 }
                 .padding(2)
                 .background(theme.editorSurface)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: 7))
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
