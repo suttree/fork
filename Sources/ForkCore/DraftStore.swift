@@ -1,6 +1,6 @@
 import Foundation
 
-public struct DraftDocument: Codable, Equatable, Sendable {
+public struct DraftDocument: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var title: String
     public var markdown: String
@@ -15,6 +15,7 @@ public struct DraftDocument: Codable, Equatable, Sendable {
 }
 
 public protocol DraftStore: Sendable {
+    func loadDrafts() throws -> [DraftDocument]
     func loadDraft(id: String) throws -> DraftDocument?
     func saveDraft(_ draft: DraftDocument) throws
 }
@@ -45,6 +46,34 @@ public struct StoredDraftProvider: Sendable {
         return draft
     }
 
+    public func loadDrafts() throws -> [DraftDocument] {
+        try store.loadDrafts()
+            .sorted { lhs, rhs in
+                if lhs.id == "home" {
+                    return true
+                }
+                if rhs.id == "home" {
+                    return false
+                }
+                return lhs.updatedAt > rhs.updatedAt
+            }
+    }
+
+    public func loadDraft(id: String) throws -> DraftDocument? {
+        try store.loadDraft(id: id)
+    }
+
+    public func createDraft(now: Date = Date()) throws -> DraftDocument {
+        let draft = DraftDocument(
+            id: UUID().uuidString,
+            title: "Untitled Page",
+            markdown: "# Untitled Page\n\n",
+            updatedAt: now
+        )
+        try store.saveDraft(draft)
+        return draft
+    }
+
     public func saveDraft(_ draft: DraftDocument) throws {
         try store.saveDraft(draft)
     }
@@ -54,6 +83,10 @@ public final class MemoryDraftStore: DraftStore, @unchecked Sendable {
     private var draftsByID: [String: DraftDocument] = [:]
 
     public init() {}
+
+    public func loadDrafts() throws -> [DraftDocument] {
+        Array(draftsByID.values)
+    }
 
     public func loadDraft(id: String) throws -> DraftDocument? {
         draftsByID[id]
@@ -71,6 +104,29 @@ public final class FileDraftStore: DraftStore, @unchecked Sendable {
     public init(rootDirectory: URL, fileManager: FileManager = .default) {
         self.rootDirectory = rootDirectory
         self.fileManager = fileManager
+    }
+
+    public func loadDrafts() throws -> [DraftDocument] {
+        guard fileManager.fileExists(atPath: rootDirectory.path) else {
+            return []
+        }
+
+        let urls = try fileManager.contentsOfDirectory(
+            at: rootDirectory,
+            includingPropertiesForKeys: nil
+        )
+        .filter { $0.pathExtension == "json" }
+
+        return try urls.compactMap { url in
+            do {
+                let data = try Data(contentsOf: url)
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                return try decoder.decode(DraftDocument.self, from: data)
+            } catch is DecodingError {
+                return nil
+            }
+        }
     }
 
     public func loadDraft(id: String) throws -> DraftDocument? {

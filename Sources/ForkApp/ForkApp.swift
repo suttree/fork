@@ -114,7 +114,26 @@ struct ForkShell: View {
                 }
 
                 Section("Write") {
-                    Label("My Place", systemImage: "square.and.pencil")
+                    Button(action: model.createDraft) {
+                        Label("New Page", systemImage: "plus")
+                    }
+
+                    ForEach(model.drafts) { draft in
+                        Button {
+                            model.selectDraft(draft.id)
+                        } label: {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(draft.title)
+                                    Text(draft.id == model.selectedDraftID ? "Editing" : draft.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                Image(systemName: draft.id == model.selectedDraftID ? "square.and.pencil" : "doc")
+                            }
+                        }
+                    }
                 }
             }
             .navigationTitle("Fork")
@@ -345,6 +364,8 @@ final class ForkAppModel: ObservableObject {
     @Published var bookmarkLabel = ""
     @Published var bookmarks: [ForkBookmark] = []
     @Published var historyEntries: [ForkHistoryEntry] = []
+    @Published var drafts: [DraftDocument] = []
+    @Published var selectedDraftID = "home"
     @Published var canGoBack = false
     @Published var canGoForward = false
 
@@ -384,6 +405,7 @@ final class ForkAppModel: ObservableObject {
     func saveDraft() {
         do {
             _ = try persistDraft()
+            try refreshDrafts()
             statusMessage = "Draft saved."
         } catch {
             errorMessage = error.localizedDescription
@@ -394,6 +416,8 @@ final class ForkAppModel: ObservableObject {
     func publish() {
         do {
             let draft = try persistDraft()
+            let documentIdentity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
+            authorPeer.useDocumentIdentity(documentIdentity)
             let now = Date()
             try authorPeer.publishHomePage(
                 title: draft.title,
@@ -414,10 +438,35 @@ final class ForkAppModel: ObservableObject {
                 addHistory: history.isEmpty
             )
             addressText = authorAddress.rawValue
+            try refreshDrafts()
             statusMessage = "Published signed record over localhost."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Publish failed."
+        }
+    }
+
+    func createDraft() {
+        do {
+            _ = try persistDraft()
+            let draft = try draftProvider.createDraft()
+            try refreshDrafts()
+            try loadDraft(draft.id)
+            statusMessage = "Created draft."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Draft could not be created."
+        }
+    }
+
+    func selectDraft(_ id: String) {
+        do {
+            _ = try persistDraft()
+            try loadDraft(id)
+            statusMessage = "Editing draft."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Draft could not be opened."
         }
     }
 
@@ -495,7 +544,7 @@ final class ForkAppModel: ObservableObject {
 
     private func load() throws {
         let authorIdentity = try identityProvider.loadOrCreateAuthorIdentity()
-        let documentIdentity = try identityProvider.loadOrCreateDocumentIdentity(account: "home")
+        let documentIdentity = try identityProvider.loadOrCreateDocumentIdentity(account: selectedDraftID)
         authorPeer.useAuthorIdentity(authorIdentity)
         authorPeer.useDocumentIdentity(documentIdentity)
         authorAddress = authorIdentity.address
@@ -504,8 +553,8 @@ final class ForkAppModel: ObservableObject {
         addressText = authorIdentity.address.rawValue
 
         let draft = try draftProvider.loadOrCreateHomeDraft()
-        draftTitle = draft.title
-        draftMarkdown = draft.markdown
+        try refreshDrafts()
+        applyDraft(draft)
         publish()
     }
 
@@ -518,13 +567,30 @@ final class ForkAppModel: ObservableObject {
 
     private func persistDraft() throws -> DraftDocument {
         let draft = DraftDocument(
-            id: "home",
+            id: selectedDraftID,
             title: draftTitle,
             markdown: draftMarkdown,
             updatedAt: Date()
         )
         try draftProvider.saveDraft(draft)
         return draft
+    }
+
+    private func loadDraft(_ id: String) throws {
+        guard let draft = try draftProvider.loadDraft(id: id) else {
+            return
+        }
+        applyDraft(draft)
+    }
+
+    private func applyDraft(_ draft: DraftDocument) {
+        selectedDraftID = draft.id
+        draftTitle = draft.title
+        draftMarkdown = draft.markdown
+    }
+
+    private func refreshDrafts() throws {
+        drafts = try draftProvider.loadDrafts()
     }
 
     private func show(_ renderedPage: RenderedPage, displayedAddress: String, addHistory: Bool) {

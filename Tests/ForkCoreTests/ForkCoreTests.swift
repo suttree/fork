@@ -144,6 +144,51 @@ struct ForkCoreTests {
         #expect(loaded == draft)
     }
 
+    @Test("draft provider lists home first then recent drafts")
+    func draftProviderListsHomeFirstThenRecentDrafts() throws {
+        let store = MemoryDraftStore()
+        let provider = StoredDraftProvider(store: store)
+        try provider.saveDraft(
+            DraftDocument(
+                id: "later",
+                title: "Later",
+                markdown: "# Later",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_500)
+            )
+        )
+        try provider.saveDraft(
+            DraftDocument(
+                id: "home",
+                title: "Home",
+                markdown: "# Home",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_300)
+            )
+        )
+        try provider.saveDraft(
+            DraftDocument(
+                id: "middle",
+                title: "Middle",
+                markdown: "# Middle",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_400)
+            )
+        )
+
+        let drafts = try provider.loadDrafts()
+
+        #expect(drafts.map(\.id) == ["home", "later", "middle"])
+    }
+
+    @Test("draft provider creates a new draft")
+    func draftProviderCreatesNewDraft() throws {
+        let provider = StoredDraftProvider(store: MemoryDraftStore())
+        let draft = try provider.createDraft(now: Date(timeIntervalSince1970: 1_783_078_400))
+
+        let loaded = try provider.loadDraft(id: draft.id)
+
+        #expect(loaded == draft)
+        #expect(draft.title == "Untitled Page")
+    }
+
     @Test("file bookmark store survives restart")
     func fileBookmarkStoreSurvivesRestart() throws {
         let rootURL = temporaryDirectory()

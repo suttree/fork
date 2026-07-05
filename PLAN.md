@@ -28,8 +28,9 @@ Status: First in-memory vertical slice implemented.
 - Added a local identity store abstraction with a Keychain-backed implementation for the macOS app.
 - Added stable stored document identity for the demo home page.
 - Added a file-backed verified record cache for manifests and document records.
-- Added a file-backed home draft store and wired the demo publish path to it.
+- Added a file-backed draft store and wired the demo publish path to it.
 - Wired the prototype editor to save drafts and publish signed records from the current draft.
+- Added a draft list in the writer, with new-page creation and selection.
 - Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.
 - Added a byte-oriented bundle codec and source protocol so transports can move encoded signed record bundles.
 - Added a loopback HTTP transport that serves and fetches encoded author bundles over localhost.
@@ -44,7 +45,7 @@ Status: First in-memory vertical slice implemented.
 
 Still not done:
 
-- The editor UI is still a single-home-page prototype, not a real document manager.
+- Publishing still promotes the selected draft as the home document; the author manifest does not yet list every local draft.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
 
@@ -108,6 +109,7 @@ Notes:
 - The demo home document now loads or creates its document identity through the same app identity provider, so its `fork://doc/...` address is stable across launches.
 - The demo home draft now loads from a draft store when one exists, otherwise it creates the default Markdown draft.
 - The prototype editor can now save edits back to the draft store and publish a signed record from the current draft.
+- The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
 - Cached document addresses can now be rendered directly as verified deep links.
 
 ## Milestone 4: Signed Records
