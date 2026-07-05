@@ -826,7 +826,7 @@ final class ForkAppModel: ObservableObject {
         do {
             let draft = try persistDraft()
             let documents = try publicationDocuments(currentDraft: draft)
-            guard let homeDocument = documents.first(where: { $0.draftID == draft.id })?.publication.identity.address else {
+            guard let homeDocument = documents.first(where: { $0.draftID == "home" })?.publication.identity.address else {
                 throw ForkError.missingPublicationDocuments
             }
             let now = Date()
