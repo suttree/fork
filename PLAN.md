@@ -38,6 +38,7 @@ Status: First in-memory vertical slice implemented.
 - Added a byte-oriented bundle codec and source protocol so transports can move encoded signed record bundles.
 - Added a loopback HTTP transport that serves and fetches encoded author bundles over localhost.
 - Wired the prototype app's publish/read path through the loopback transport.
+- Added a second sample author place in the app, fetched over its own loopback peer.
 - Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
 - Added verified cached rendering for `fork://doc/...` document deep links.
 - Added local bookmark nicknames so ugly key addresses can have personal labels.
@@ -181,6 +182,7 @@ Notes:
 - The first transport is intentionally local-only: `LoopbackAuthorBundleServer` and `LoopbackAuthorBundleClient` exchange encoded author bundles over HTTP on localhost.
 - This is not real p2p discovery yet, but it proves the app can move signed records through a socket boundary and verify/cache them on the receiving side.
 - The app now uses that localhost transport for its prototype author-to-reader flow.
+- The app also starts a second sample author peer, so the read path can visit another local author address through the same transport.
 
 ## Milestone 7: Offline-First UX
 

@@ -539,6 +539,53 @@ struct ForkCoreTests {
         #expect(cachedPage.markdown.contains("Fetched over localhost."))
     }
 
+    @Test("loopback transport can fetch multiple local authors")
+    func loopbackTransportFetchesMultipleAuthors() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let firstAuthor = LocalPeer(name: "First Author")
+        let secondAuthor = LocalPeer(name: "Second Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let firstAddress = firstAuthor.createAuthorIdentity()
+        let secondAddress = secondAuthor.createAuthorIdentity()
+        try firstAuthor.publishHomePage(
+            title: "First Place",
+            markdown: "# First Place",
+            createdAt: now
+        )
+        try secondAuthor.publishHomePage(
+            title: "Second Place",
+            markdown: "# Second Place",
+            createdAt: now
+        )
+
+        let firstServer = try LoopbackAuthorBundleServer(peer: firstAuthor)
+        let secondServer = try LoopbackAuthorBundleServer(peer: secondAuthor)
+        try firstServer.start()
+        try secondServer.start()
+        defer {
+            firstServer.stop()
+            secondServer.stop()
+        }
+
+        let firstClient = try LoopbackAuthorBundleClient(baseURL: firstServer.baseURL)
+        let secondClient = try LoopbackAuthorBundleClient(baseURL: secondServer.baseURL)
+        let firstPage = try readerPeer.renderAuthor(
+            firstAddress,
+            preferLiveSource: firstClient,
+            fetchedAt: now
+        )
+        let secondPage = try readerPeer.renderAuthor(
+            secondAddress,
+            preferLiveSource: secondClient,
+            fetchedAt: now
+        )
+
+        #expect(firstPage.source == .live)
+        #expect(secondPage.source == .live)
+        #expect(firstPage.title == "First Place")
+        #expect(secondPage.title == "Second Place")
+    }
+
     @Test("author bundles reject records for the wrong author")
     func authorBundleRejectsWrongAuthor() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)

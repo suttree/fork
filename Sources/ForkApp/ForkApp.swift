@@ -71,6 +71,14 @@ struct ForkShell: View {
                     } label: {
                         Label("My Place", systemImage: "doc.text")
                     }
+
+                    if model.samplePlaceAddress != nil {
+                        Button {
+                            model.visitSamplePlace()
+                        } label: {
+                            Label("Sample Place", systemImage: "network")
+                        }
+                    }
                 }
 
                 if !model.placePages.isEmpty {
@@ -552,15 +560,20 @@ final class ForkAppModel: ObservableObject {
     }
     @Published var canGoBack = false
     @Published var canGoForward = false
+    @Published var samplePlaceAddress: String?
 
     private var identityProvider: StoredIdentityProvider
     private var draftProvider: StoredDraftProvider
     private var bookmarkStore: any BookmarkStore
     private var readerPeer: LocalPeer
     private let authorPeer = LocalPeer(name: "Author")
+    private let samplePeer = LocalPeer(name: "Sample Author")
     private var authorServer: LoopbackAuthorBundleServer?
     private var authorClient: LoopbackAuthorBundleClient?
+    private var sampleServer: LoopbackAuthorBundleServer?
+    private var sampleClient: LoopbackAuthorBundleClient?
     private var authorAddress: ForkAddress?
+    private var sampleAddress: ForkAddress?
     private var history: [String] = []
     private var historyIndex: Int?
 
@@ -684,15 +697,21 @@ final class ForkAppModel: ObservableObject {
         visit(authorAddress.rawValue)
     }
 
+    func visitSamplePlace() {
+        guard let sampleAddress else {
+            return
+        }
+        visit(sampleAddress.rawValue)
+    }
+
     func visit(_ rawAddress: String) {
         do {
             let address = try ForkAddress(rawAddress.trimmingCharacters(in: .whitespacesAndNewlines))
             let renderedPage: RenderedPage
             if address.kind == .author {
-                let liveSource: (any AuthorBundleSource)? = address == authorAddress ? authorClient : nil
                 renderedPage = try readerPeer.renderAuthor(
                     address,
-                    preferLiveSource: liveSource,
+                    preferLiveSource: liveSource(for: address),
                     fetchedAt: Date()
                 )
             } else {
@@ -752,6 +771,7 @@ final class ForkAppModel: ObservableObject {
         authorPeer.useDocumentIdentity(documentIdentity)
         authorAddress = authorIdentity.address
         try startAuthorTransport()
+        try startSampleTransport()
         bookmarks = try bookmarkStore.loadBookmarks()
         addressText = authorIdentity.address.rawValue
 
@@ -766,6 +786,55 @@ final class ForkAppModel: ObservableObject {
         try server.start()
         authorServer = server
         authorClient = try LoopbackAuthorBundleClient(baseURL: server.baseURL)
+    }
+
+    private func startSampleTransport() throws {
+        let sampleIdentity = ForkIdentity(role: .author)
+        samplePeer.useAuthorIdentity(sampleIdentity)
+        sampleAddress = sampleIdentity.address
+        samplePlaceAddress = sampleIdentity.address.rawValue
+
+        let fieldNotes = ForkIdentity(role: .document)
+        let about = ForkIdentity(role: .document)
+        try samplePeer.publishDocuments(
+            [
+                LocalDocumentPublication(
+                    identity: fieldNotes,
+                    title: "Field Notes from Elsewhere",
+                    markdown: """
+                    # Field Notes from Elsewhere
+
+                    This page belongs to a second local Fork author. It is fetched over the same loopback transport, verified, cached, and then rendered like any other place.
+                    """
+                ),
+                LocalDocumentPublication(
+                    identity: about,
+                    title: "About This Sample",
+                    markdown: """
+                    # About This Sample
+
+                    Fork addresses are intentionally strange. Browsing should lean on bookmarks, history, trails, and local names instead of nice domains.
+                    """
+                )
+            ],
+            homeDocument: fieldNotes.address,
+            createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+
+        let server = try LoopbackAuthorBundleServer(peer: samplePeer)
+        try server.start()
+        sampleServer = server
+        sampleClient = try LoopbackAuthorBundleClient(baseURL: server.baseURL)
+    }
+
+    private func liveSource(for address: ForkAddress) -> (any AuthorBundleSource)? {
+        if address == authorAddress {
+            return authorClient
+        }
+        if address == sampleAddress {
+            return sampleClient
+        }
+        return nil
     }
 
     private func persistDraft() throws -> DraftDocument {
