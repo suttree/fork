@@ -44,6 +44,10 @@ public struct StoredDraftProvider: Sendable {
         try store.saveDraft(draft)
         return draft
     }
+
+    public func saveDraft(_ draft: DraftDocument) throws {
+        try store.saveDraft(draft)
+    }
 }
 
 public final class MemoryDraftStore: DraftStore, @unchecked Sendable {

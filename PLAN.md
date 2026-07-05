@@ -29,11 +29,12 @@ Status: First in-memory vertical slice implemented.
 - Added stable stored document identity for the demo home page.
 - Added a file-backed verified record cache for manifests and document records.
 - Added a file-backed home draft store and wired the demo publish path to it.
+- Wired the prototype editor to save drafts and publish signed records from the current draft.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
 
-- The editor UI does not yet save edits back to the draft store interactively.
+- The editor UI is still a single-home-page prototype, not a real document manager.
 - The peer loop is local/in-process, not a real p2p transport.
 - The app shell is intentionally plain and only demonstrates the slice.
 
@@ -95,7 +96,7 @@ Notes:
 
 - The demo home document now loads or creates its document identity through the same app identity provider, so its `fork://doc/...` address is stable across launches.
 - The demo home draft now loads from a draft store when one exists, otherwise it creates the default Markdown draft.
-- The next UI step is to make edits in the text editor write back to that draft store.
+- The prototype editor can now save edits back to the draft store and publish a signed record from the current draft.
 
 ## Milestone 4: Signed Records
 

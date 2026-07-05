@@ -6,34 +6,24 @@ import SwiftUI
 struct ForkApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(model: ForkAppModel())
         }
     }
 }
 
 struct ContentView: View {
-    @State private var result: Result<VerticalSliceResult, Error> = Result {
-        let identityProvider = StoredIdentityProvider(store: KeychainIdentityStore())
-        return try VerticalSliceDemo.run(
-            identityProvider: identityProvider,
-            draftProvider: StoredDraftProvider(
-                store: FileDraftStore(rootDirectory: forkDraftDirectory())
-            ),
-            readerRecordCache: FileRecordCache(rootDirectory: forkCacheDirectory())
-        )
-    }
+    @StateObject var model: ForkAppModel
 
     var body: some View {
-        switch result {
-        case .success(let slice):
-            ForkShell(slice: slice)
-        case .failure(let error):
+        if let page = model.page {
+            ForkShell(model: model, page: page)
+        } else {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Fork")
                     .font(.largeTitle)
-                Text("The first local peer loop could not start.")
+                Text("The local Fork workspace could not start.")
                     .foregroundStyle(.secondary)
-                Text(error.localizedDescription)
+                Text(model.errorMessage ?? "Unknown error")
                     .font(.callout)
             }
             .padding(28)
@@ -62,7 +52,8 @@ private func forkApplicationSupportDirectory() -> URL {
 }
 
 struct ForkShell: View {
-    let slice: VerticalSliceResult
+    @ObservedObject var model: ForkAppModel
+    let page: RenderedPage
 
     var body: some View {
         NavigationSplitView {
@@ -81,12 +72,18 @@ struct ForkShell: View {
             .navigationTitle("Fork")
         } detail: {
             HStack(spacing: 0) {
-                ReaderView(page: slice.cachedPage)
+                ReaderView(page: page)
                     .frame(minWidth: 420)
 
                 Divider()
 
-                WriterPreview(markdown: slice.cachedPage.markdown)
+                WriterPreview(
+                    title: $model.draftTitle,
+                    markdown: $model.draftMarkdown,
+                    status: model.statusMessage,
+                    saveDraft: model.saveDraft,
+                    publish: model.publish
+                )
                     .frame(minWidth: 300)
             }
             .toolbar {
@@ -168,26 +165,137 @@ struct ReaderView: View {
 }
 
 struct WriterPreview: View {
-    let markdown: String
+    @Binding var title: String
+    @Binding var markdown: String
+    let status: String
+    let saveDraft: () -> Void
+    let publish: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Write")
                 .font(.title2)
                 .fontWeight(.semibold)
-            TextEditor(text: .constant(markdown))
+
+            TextField("Title", text: $title)
+                .textFieldStyle(.roundedBorder)
+
+            TextEditor(text: $markdown)
                 .font(.system(.body, design: .monospaced))
                 .scrollContentBackground(.hidden)
                 .padding(8)
                 .background(Color(nsColor: .textBackgroundColor))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            Button {
-            } label: {
-                Label("Publish Signed Record", systemImage: "signature")
+            HStack(spacing: 10) {
+                Button(action: saveDraft) {
+                    Label("Save Draft", systemImage: "tray.and.arrow.down")
+                }
+
+                Button(action: publish) {
+                    Label("Publish Signed Record", systemImage: "signature")
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
+
+            Text(status)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .padding(24)
+    }
+}
+
+@MainActor
+final class ForkAppModel: ObservableObject {
+    @Published var draftTitle = ""
+    @Published var draftMarkdown = ""
+    @Published var page: RenderedPage?
+    @Published var statusMessage = "Ready."
+    @Published var errorMessage: String?
+
+    private var identityProvider: StoredIdentityProvider
+    private var draftProvider: StoredDraftProvider
+    private var readerPeer: LocalPeer
+    private let authorPeer = LocalPeer(name: "Author")
+    private var authorAddress: ForkAddress?
+
+    init() {
+        do {
+            identityProvider = StoredIdentityProvider(store: KeychainIdentityStore())
+            draftProvider = try StoredDraftProvider(
+                store: FileDraftStore(rootDirectory: forkDraftDirectory())
+            )
+            readerPeer = try LocalPeer(
+                name: "Reader",
+                recordCache: FileRecordCache(rootDirectory: forkCacheDirectory())
+            )
+
+            try load()
+        } catch {
+            identityProvider = StoredIdentityProvider(store: MemoryIdentityStore())
+            draftProvider = StoredDraftProvider(store: MemoryDraftStore())
+            readerPeer = LocalPeer(name: "Reader")
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func saveDraft() {
+        do {
+            _ = try persistDraft()
+            statusMessage = "Draft saved."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Draft could not be saved."
+        }
+    }
+
+    func publish() {
+        do {
+            let draft = try persistDraft()
+            let now = Date()
+            try authorPeer.publishHomePage(
+                title: draft.title,
+                markdown: draft.markdown,
+                createdAt: now
+            )
+            guard let authorAddress else {
+                return
+            }
+            _ = try readerPeer.renderAuthor(
+                authorAddress,
+                preferLivePeer: authorPeer,
+                fetchedAt: now
+            )
+            page = try readerPeer.renderAuthor(authorAddress)
+            statusMessage = "Published signed record."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Publish failed."
+        }
+    }
+
+    private func load() throws {
+        let authorIdentity = try identityProvider.loadOrCreateAuthorIdentity()
+        let documentIdentity = try identityProvider.loadOrCreateDocumentIdentity(account: "home")
+        authorPeer.useAuthorIdentity(authorIdentity)
+        authorPeer.useDocumentIdentity(documentIdentity)
+        authorAddress = authorIdentity.address
+
+        let draft = try draftProvider.loadOrCreateHomeDraft()
+        draftTitle = draft.title
+        draftMarkdown = draft.markdown
+        publish()
+    }
+
+    private func persistDraft() throws -> DraftDocument {
+        let draft = DraftDocument(
+            id: "home",
+            title: draftTitle,
+            markdown: draftMarkdown,
+            updatedAt: Date()
+        )
+        try draftProvider.saveDraft(draft)
+        return draft
     }
 }
