@@ -320,6 +320,7 @@ Notes:
 - Bookmark rows show whether a saved address is an author place or document page.
 - Empty bookmarks now have a quiet visible state.
 - Bookmark rows can now delete saved entries.
+- Bookmark deletion now refreshes the nickname field from the displayed page address, not unsent address edits.
 - Bookmark delete feedback now distinguishes removed entries from entries already gone.
 - History rows refresh immediately when bookmark nicknames are saved or deleted.
 - Back/forward navigation now revisits author places through the normal live-then-cache path.

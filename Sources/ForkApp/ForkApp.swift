@@ -1377,7 +1377,7 @@ final class ForkAppModel: ObservableObject {
             bookmarks.removeAll { $0.address == address }
             try bookmarkStore.saveBookmarks(bookmarks)
             if let page {
-                bookmarkLabel = bookmarkLabel(for: addressText) ?? page.title
+                bookmarkLabel = bookmarkLabel(for: currentDisplayedAddress ?? addressText) ?? page.title
             }
             updateHistoryEntries()
             statusMessage = didDeleteBookmark ? "Bookmark deleted." : "Bookmark was already gone."
