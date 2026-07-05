@@ -113,8 +113,16 @@ public final class LocalPeer: @unchecked Sendable {
     }
 
     public func fetchAuthor(_ address: ForkAddress, from peer: LocalPeer, at fetchedAt: Date = Date()) throws {
-        let bundle = try peer.exportAuthorBundle(address)
-        try importAuthorBundle(bundle, expectedAuthor: address, cachedAt: fetchedAt)
+        try fetchAuthor(address, from: peer as AuthorBundleSource, at: fetchedAt)
+    }
+
+    public func fetchAuthor(
+        _ address: ForkAddress,
+        from source: any AuthorBundleSource,
+        at fetchedAt: Date = Date()
+    ) throws {
+        let data = try source.authorBundleData(for: address)
+        try importAuthorBundleData(data, expectedAuthor: address, cachedAt: fetchedAt)
     }
 
     public func renderAuthor(
@@ -158,6 +166,19 @@ public final class LocalPeer: @unchecked Sendable {
         }
 
         return AuthorRecordBundle(manifest: manifest, documents: documents)
+    }
+
+    public func exportAuthorBundleData(_ address: ForkAddress) throws -> Data {
+        try AuthorRecordBundleCodec.encode(exportAuthorBundle(address))
+    }
+
+    public func importAuthorBundleData(
+        _ data: Data,
+        expectedAuthor: ForkAddress,
+        cachedAt: Date = Date()
+    ) throws {
+        let bundle = try AuthorRecordBundleCodec.decode(data)
+        try importAuthorBundle(bundle, expectedAuthor: expectedAuthor, cachedAt: cachedAt)
     }
 
     public func importAuthorBundle(
@@ -308,6 +329,12 @@ public final class LocalPeer: @unchecked Sendable {
             return incoming
         }
         return incoming.recordVersion >= current.recordVersion ? incoming : current
+    }
+}
+
+extension LocalPeer: AuthorBundleSource {
+    public func authorBundleData(for address: ForkAddress) throws -> Data {
+        try exportAuthorBundleData(address)
     }
 }
 

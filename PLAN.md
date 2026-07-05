@@ -31,6 +31,7 @@ Status: First in-memory vertical slice implemented.
 - Added a file-backed home draft store and wired the demo publish path to it.
 - Wired the prototype editor to save drafts and publish signed records from the current draft.
 - Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.
+- Added a byte-oriented bundle codec and source protocol so transports can move encoded signed record bundles.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
@@ -135,7 +136,7 @@ Notes:
 
 - The local loop is still in-process, but verified records now survive peer restart through `FileRecordCache`.
 - Invalid signatures and malformed cache files are ignored on load rather than rendered.
-- Fetching now goes through `AuthorRecordBundle`, which is closer to the shape a real transport will move across the network.
+- Fetching now goes through encoded `AuthorRecordBundle` data, which is closer to the shape a real transport will move across the network.
 
 ## Milestone 6: First Real P2P Transport
 

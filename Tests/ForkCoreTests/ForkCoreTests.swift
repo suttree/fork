@@ -201,6 +201,52 @@ struct ForkCoreTests {
         #expect(cachedPage.markdown.contains("Carried as signed records."))
     }
 
+    @Test("author bundle wire data round trips")
+    func authorBundleWireDataRoundTrips() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorPeer = LocalPeer(name: "Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Wire Place",
+            markdown: "# Wire Place\n\nMoved as bytes.",
+            createdAt: now
+        )
+
+        let data = try authorPeer.exportAuthorBundleData(authorAddress)
+        try readerPeer.importAuthorBundleData(
+            data,
+            expectedAuthor: authorAddress,
+            cachedAt: now
+        )
+        let cachedPage = try readerPeer.renderAuthor(authorAddress)
+
+        #expect(!data.isEmpty)
+        #expect(cachedPage.markdown.contains("Moved as bytes."))
+    }
+
+    @Test("fetching author uses byte bundle source")
+    func fetchAuthorUsesByteBundleSource() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorPeer = LocalPeer(name: "Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Source Place",
+            markdown: "# Source Place\n\nFetched through source bytes.",
+            createdAt: now
+        )
+
+        let source = MemoryAuthorBundleSource(dataByAddress: [
+            authorAddress.rawValue: try authorPeer.exportAuthorBundleData(authorAddress)
+        ])
+        try readerPeer.fetchAuthor(authorAddress, from: source, at: now)
+        let cachedPage = try readerPeer.renderAuthor(authorAddress)
+
+        #expect(cachedPage.source == .cache(now))
+        #expect(cachedPage.markdown.contains("Fetched through source bytes."))
+    }
+
     @Test("author bundles reject records for the wrong author")
     func authorBundleRejectsWrongAuthor() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)
@@ -289,6 +335,17 @@ struct ForkCoreTests {
     private func temporaryDirectory() -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("ForkCoreTests-\(UUID().uuidString)", isDirectory: true)
+    }
+}
+
+private struct MemoryAuthorBundleSource: AuthorBundleSource {
+    var dataByAddress: [String: Data]
+
+    func authorBundleData(for address: ForkAddress) throws -> Data {
+        guard let data = dataByAddress[address.rawValue] else {
+            throw ForkError.missingManifest(address)
+        }
+        return data
     }
 }
 
