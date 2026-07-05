@@ -1285,6 +1285,8 @@ final class ForkAppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = unavailableStatusText(for: error)
+            updateHistoryEntries()
+            updateHistoryAvailability()
         }
     }
 
@@ -1674,6 +1676,8 @@ final class ForkAppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = unavailableStatusText(for: error)
+            updateHistoryEntries()
+            updateHistoryAvailability()
         }
     }
 

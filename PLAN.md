@@ -317,6 +317,7 @@ Notes:
 - Bookmark delete feedback now distinguishes removed entries from entries already gone.
 - History rows refresh immediately when bookmark nicknames are saved or deleted.
 - Back/forward navigation now revisits author places through the normal live-then-cache path.
+- Address and back/forward failures now keep the history list and navigation controls in sync.
 - The place page list now labels home and current pages clearly while keeping raw addresses available as help text.
 - The reader Home action now returns through the author place address, not just the home document deep link.
 - Reader Markdown links now keep `fork://` navigation inside Fork and refuse non-Fork URLs.
