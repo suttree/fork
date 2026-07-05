@@ -79,6 +79,7 @@ Status: First in-memory vertical slice implemented.
 - Added document-address bookmarks and visible history entries in the sidebar.
 - Added copy controls for author and document addresses in the reader.
 - Reader and writer address-copy controls now confirm when an address is copied.
+- The reader can now copy the current signed page as a ready Markdown link.
 - Added document version and previous-record hints in the reader.
 - Surfaced live/cached/unavailable status in the browsing address bar.
 - Cached status messages now include the cached copy timestamp in the address bar.

@@ -261,6 +261,7 @@ struct ForkShell: View {
                         page: page,
                         theme: model.readerTheme,
                         copyAddress: model.addressCopied,
+                        copyMarkdownLink: model.copyCurrentPageMarkdownLink,
                         openURL: model.openMarkdownLink
                     )
                         .frame(minWidth: 420)
@@ -676,6 +677,7 @@ struct ReaderView: View {
     let page: RenderedPage
     let theme: ForkReaderTheme
     let copyAddress: () -> Void
+    let copyMarkdownLink: () -> Void
     let openURL: (URL) -> OpenURLAction.Result
 
     var body: some View {
@@ -723,7 +725,15 @@ struct ReaderView: View {
                         .font(.caption)
                         .foregroundStyle(theme.secondaryText)
                         .padding(.top, 8)
-                    AddressCopyRow(address: page.documentAddress.rawValue, theme: theme, copied: copyAddress)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        AddressCopyRow(address: page.documentAddress.rawValue, theme: theme, copied: copyAddress)
+
+                        Button(action: copyMarkdownLink) {
+                            Label("Copy Markdown Link", systemImage: "link")
+                        }
+                        .labelStyle(.iconOnly)
+                        .help("Copy Markdown link")
+                    }
                 }
                 .padding(.top, 16)
             }
@@ -1242,6 +1252,18 @@ final class ForkAppModel: ObservableObject {
 
     func copySelectedDraftMarkdownLink() {
         copyDraftMarkdownLink(selectedDraftID)
+    }
+
+    func copyCurrentPageMarkdownLink() {
+        guard let page else {
+            statusMessage = "Markdown link could not be copied."
+            return
+        }
+
+        let link = "[\(markdownLinkTitle(page.title))](\(page.documentAddress.rawValue))"
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(link, forType: .string)
+        statusMessage = "Markdown link copied for \(page.title)."
     }
 
     func visitOwnPlace() {
