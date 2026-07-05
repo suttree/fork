@@ -575,18 +575,40 @@ struct AddressCopyRow: View {
 }
 
 struct WriterPreview: View {
+    private enum Mode: String, CaseIterable, Identifiable {
+        case edit = "Edit"
+        case preview = "Preview"
+
+        var id: String {
+            rawValue
+        }
+    }
+
     @Binding var title: String
     @Binding var markdown: String
     let documentAddress: String
     let status: String
     let saveDraft: () -> Void
     let publish: () -> Void
+    @State private var mode: Mode = .edit
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Write")
-                .font(.title2)
-                .fontWeight(.semibold)
+            HStack {
+                Text("Write")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+
+                Spacer()
+
+                Picker("Writer Mode", selection: $mode) {
+                    ForEach(Mode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 160)
+            }
 
             TextField("Title", text: $title)
                 .textFieldStyle(.roundedBorder)
@@ -598,12 +620,25 @@ struct WriterPreview: View {
                 DraftAddressCopyRow(address: documentAddress)
             }
 
-            TextEditor(text: $markdown)
-                .font(.system(.body, design: .monospaced))
-                .scrollContentBackground(.hidden)
-                .padding(8)
-                .background(Color(nsColor: .textBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+            Group {
+                switch mode {
+                case .edit:
+                    TextEditor(text: $markdown)
+                        .font(.system(.body, design: .monospaced))
+                        .scrollContentBackground(.hidden)
+                        .padding(8)
+                case .preview:
+                    ScrollView {
+                        Text(renderedMarkdown)
+                            .font(.body)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(12)
+                    }
+                }
+            }
+            .background(Color(nsColor: .textBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
 
             HStack(spacing: 10) {
                 Button(action: saveDraft) {
@@ -621,6 +656,10 @@ struct WriterPreview: View {
                 .foregroundStyle(.secondary)
         }
         .padding(24)
+    }
+
+    private var renderedMarkdown: AttributedString {
+        (try? AttributedString(markdown: markdown)) ?? AttributedString(markdown)
     }
 }
 
