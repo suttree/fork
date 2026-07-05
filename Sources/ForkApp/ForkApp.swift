@@ -69,14 +69,36 @@ struct ForkShell: View {
                     Button {
                         model.visitOwnPlace()
                     } label: {
-                        Label("My Place", systemImage: "doc.text")
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("My Place")
+                                    .lineLimit(1)
+                                Text("Local author place")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        } icon: {
+                            Image(systemName: "doc.text")
+                        }
                     }
 
                     if model.samplePlaceAddress != nil {
                         Button {
                             model.visitSamplePlace()
                         } label: {
-                            Label("Sample Place", systemImage: "network")
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Sample Place")
+                                        .lineLimit(1)
+                                    Text(model.samplePeerOnline ? "Online over localhost" : "Offline, cache only")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                            } icon: {
+                                Image(systemName: "network")
+                            }
                         }
 
                         Button {
