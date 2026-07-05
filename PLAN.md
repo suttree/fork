@@ -314,6 +314,7 @@ Notes:
 - Bookmark saves now immediately show the normalized local display title in the nickname field.
 - Bookmark rows show whether a saved address is an author place or document page.
 - Bookmark rows can now delete saved entries.
+- Bookmark delete feedback now distinguishes removed entries from entries already gone.
 - History rows refresh immediately when bookmark nicknames are saved or deleted.
 - Back/forward navigation now revisits author places through the normal live-then-cache path.
 - The place page list now labels home and current pages clearly while keeping raw addresses available as help text.

@@ -1316,13 +1316,14 @@ final class ForkAppModel: ObservableObject {
 
     func deleteBookmark(_ address: String) {
         do {
+            let didDeleteBookmark = bookmarks.contains { $0.address == address }
             bookmarks.removeAll { $0.address == address }
             try bookmarkStore.saveBookmarks(bookmarks)
             if let page {
                 bookmarkLabel = bookmarkLabel(for: addressText) ?? page.title
             }
             updateHistoryEntries()
-            statusMessage = "Bookmark deleted."
+            statusMessage = didDeleteBookmark ? "Bookmark deleted." : "Bookmark was already gone."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Bookmark could not be deleted."
