@@ -264,6 +264,7 @@ Notes:
 - Taking the sample author offline while reading it now immediately refreshes the reader into the verified cached state.
 - Bringing the sample author online while reading it now immediately refreshes the reader back to the live signed state.
 - Sample online/offline transitions now share the same current-page refresh path.
+- Back/forward history restores now use the normal live-then-cache render path for author addresses.
 - The reader has a persisted theme picker with colorful reader-owned Classic, Starship, and NvChad modes. Authors may publish content and metadata, but the reader keeps final control of how pages look locally.
 
 ## Milestone 8: Bookmark-Led Browsing
@@ -297,6 +298,7 @@ Notes:
 - Bookmark rows show whether a saved address is an author place or document page.
 - Bookmark rows can now delete saved entries.
 - History rows refresh immediately when bookmark nicknames are saved or deleted.
+- Back/forward navigation now revisits author places through the normal live-then-cache path.
 - The place page list now labels home and current pages clearly while keeping raw addresses available as help text.
 - The reader Home action now returns through the author place address, not just the home document deep link.
 

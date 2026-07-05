@@ -1568,9 +1568,8 @@ final class ForkAppModel: ObservableObject {
         }
 
         do {
-            let address = try ForkAddress(history[index])
-            let renderedPage = try readerPeer.render(address)
-            show(renderedPage, displayedAddress: address.rawValue, addHistory: false)
+            let renderedPage = try renderAddress(history[index])
+            show(renderedPage, displayedAddress: history[index], addHistory: false)
             statusMessage = statusText(for: renderedPage)
             updateHistoryEntries()
             updateHistoryAvailability()
