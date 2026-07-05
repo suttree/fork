@@ -130,9 +130,21 @@ public final class LocalPeer: @unchecked Sendable {
         preferLivePeer peer: LocalPeer? = nil,
         fetchedAt: Date = Date()
     ) throws -> RenderedPage {
-        if let peer {
+        try renderAuthor(
+            address,
+            preferLiveSource: peer as (any AuthorBundleSource)?,
+            fetchedAt: fetchedAt
+        )
+    }
+
+    public func renderAuthor(
+        _ address: ForkAddress,
+        preferLiveSource source: (any AuthorBundleSource)?,
+        fetchedAt: Date = Date()
+    ) throws -> RenderedPage {
+        if let source {
             do {
-                try fetchAuthor(address, from: peer, at: fetchedAt)
+                try fetchAuthor(address, from: source, at: fetchedAt)
                 return try renderCachedAuthor(address, source: .live)
             } catch {
                 return try renderCachedAuthorFromCache(address)

@@ -218,6 +218,8 @@ final class ForkAppModel: ObservableObject {
     private var draftProvider: StoredDraftProvider
     private var readerPeer: LocalPeer
     private let authorPeer = LocalPeer(name: "Author")
+    private var authorServer: LoopbackAuthorBundleServer?
+    private var authorClient: LoopbackAuthorBundleClient?
     private var authorAddress: ForkAddress?
 
     init() {
@@ -262,13 +264,12 @@ final class ForkAppModel: ObservableObject {
             guard let authorAddress else {
                 return
             }
-            _ = try readerPeer.renderAuthor(
+            page = try readerPeer.renderAuthor(
                 authorAddress,
-                preferLivePeer: authorPeer,
+                preferLiveSource: authorClient,
                 fetchedAt: now
             )
-            page = try readerPeer.renderAuthor(authorAddress)
-            statusMessage = "Published signed record."
+            statusMessage = "Published signed record over localhost."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Publish failed."
@@ -281,11 +282,19 @@ final class ForkAppModel: ObservableObject {
         authorPeer.useAuthorIdentity(authorIdentity)
         authorPeer.useDocumentIdentity(documentIdentity)
         authorAddress = authorIdentity.address
+        try startAuthorTransport()
 
         let draft = try draftProvider.loadOrCreateHomeDraft()
         draftTitle = draft.title
         draftMarkdown = draft.markdown
         publish()
+    }
+
+    private func startAuthorTransport() throws {
+        let server = try LoopbackAuthorBundleServer(peer: authorPeer)
+        try server.start()
+        authorServer = server
+        authorClient = try LoopbackAuthorBundleClient(baseURL: server.baseURL)
     }
 
     private func persistDraft() throws -> DraftDocument {

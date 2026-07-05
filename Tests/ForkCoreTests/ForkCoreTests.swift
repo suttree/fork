@@ -247,6 +247,30 @@ struct ForkCoreTests {
         #expect(cachedPage.markdown.contains("Fetched through source bytes."))
     }
 
+    @Test("rendering through live bundle source marks page live")
+    func renderingThroughLiveBundleSourceMarksPageLive() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorPeer = LocalPeer(name: "Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Live Source Place",
+            markdown: "# Live Source Place",
+            createdAt: now
+        )
+
+        let source = MemoryAuthorBundleSource(dataByAddress: [
+            authorAddress.rawValue: try authorPeer.exportAuthorBundleData(authorAddress)
+        ])
+        let livePage = try readerPeer.renderAuthor(
+            authorAddress,
+            preferLiveSource: source,
+            fetchedAt: now
+        )
+
+        #expect(livePage.source == .live)
+    }
+
     @Test("loopback transport fetches author bundle over localhost")
     func loopbackTransportFetchesAuthorBundle() throws {
         let now = Date(timeIntervalSince1970: 1_783_078_400)
