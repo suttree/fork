@@ -78,6 +78,7 @@ Status: First in-memory vertical slice implemented.
 - Unavailable address states now explain invalid addresses, missing cached copies, and failed verification calmly.
 - Added a signed place page list in the sidebar from the current author manifest.
 - Place and writer sidebars now label home/current/page roles instead of leaning on raw addresses.
+- Sidebar rows now share a small title/subtitle/icon component for clearer ongoing UI polish.
 - Added colorful local reader themes for Classic, Starship, and NvChad reading modes.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 

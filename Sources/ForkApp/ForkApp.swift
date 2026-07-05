@@ -69,36 +69,22 @@ struct ForkShell: View {
                     Button {
                         model.visitOwnPlace()
                     } label: {
-                        Label {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("My Place")
-                                    .lineLimit(1)
-                                Text("Local author place")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                        } icon: {
-                            Image(systemName: "doc.text")
-                        }
+                        SidebarRow(
+                            title: "My Place",
+                            subtitle: "Local author place",
+                            iconName: "doc.text"
+                        )
                     }
 
                     if model.samplePlaceAddress != nil {
                         Button {
                             model.visitSamplePlace()
                         } label: {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Sample Place")
-                                        .lineLimit(1)
-                                    Text(model.samplePeerOnline ? "Online over localhost" : "Offline, cache only")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                }
-                            } icon: {
-                                Image(systemName: "network")
-                            }
+                            SidebarRow(
+                                title: "Sample Place",
+                                subtitle: model.samplePeerOnline ? "Online over localhost" : "Offline, cache only",
+                                iconName: "network"
+                            )
                         }
 
                         Button {
@@ -118,18 +104,11 @@ struct ForkShell: View {
                             Button {
                                 model.visit(page.address)
                             } label: {
-                                Label {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(page.title)
-                                            .lineLimit(1)
-                                        Text(page.subtitle)
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                    }
-                                } icon: {
-                                    Image(systemName: page.isHome ? "house" : "doc.text")
-                                }
+                                SidebarRow(
+                                    title: page.title,
+                                    subtitle: page.subtitle,
+                                    iconName: page.isHome ? "house" : "doc.text"
+                                )
                             }
                             .help(page.address)
                         }
@@ -149,18 +128,11 @@ struct ForkShell: View {
                         Button {
                             model.visit(entry.address)
                         } label: {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(entry.title)
-                                        .lineLimit(1)
-                                    Text(entry.subtitle)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                }
-                            } icon: {
-                                Image(systemName: entry.iconName)
-                            }
+                            SidebarRow(
+                                title: entry.title,
+                                subtitle: entry.subtitle,
+                                iconName: entry.iconName
+                            )
                         }
                         .help(entry.address)
                     }
@@ -172,18 +144,11 @@ struct ForkShell: View {
                             Button {
                                 model.visit(bookmark.address)
                             } label: {
-                                Label {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(bookmark.displayTitle)
-                                            .lineLimit(1)
-                                        Text(bookmark.subtitle)
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                    }
-                                } icon: {
-                                    Image(systemName: bookmark.iconName)
-                                }
+                                SidebarRow(
+                                    title: bookmark.displayTitle,
+                                    subtitle: bookmark.subtitle,
+                                    iconName: bookmark.iconName
+                                )
                             }
                             .buttonStyle(.plain)
 
@@ -211,18 +176,11 @@ struct ForkShell: View {
                             Button {
                                 model.selectDraft(draft.id)
                             } label: {
-                                Label {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(draft.title)
-                                            .lineLimit(1)
-                                        Text(draftSubtitle(for: draft))
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                    }
-                                } icon: {
-                                    Image(systemName: draftIconName(for: draft))
-                                }
+                                SidebarRow(
+                                    title: draft.title,
+                                    subtitle: draftSubtitle(for: draft),
+                                    iconName: draftIconName(for: draft)
+                                )
                             }
                             .buttonStyle(.plain)
 
@@ -368,6 +326,27 @@ struct ForkShell: View {
             return draft.id == model.selectedDraftID ? "house.fill" : "house"
         }
         return draft.id == model.selectedDraftID ? "square.and.pencil" : "doc"
+    }
+}
+
+struct SidebarRow: View {
+    let title: String
+    let subtitle: String
+    let iconName: String
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        } icon: {
+            Image(systemName: iconName)
+        }
     }
 }
 
