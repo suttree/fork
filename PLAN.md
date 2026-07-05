@@ -163,6 +163,7 @@ Notes:
 - Publishing an added page no longer accidentally promotes it to the home page; the protected `home` draft remains the place entry point.
 - After publishing an added page, the reader stays on that page while the author address still resolves to Home.
 - The writer shows the selected draft's stable document address with a copy control.
+- The writer can copy any local page as a Markdown `fork://` link for building trails between pages.
 - Visiting one of your own signed pages now selects the matching local draft in the writer.
 - Non-home drafts can now be deleted from the writer, with confirmation, before the next signed publish.
 - Publishing now signs document records for every local draft and lists them in the author manifest, with the protected `home` draft as the home document.
@@ -304,6 +305,7 @@ Notes:
 - The place page list now labels home and current pages clearly while keeping raw addresses available as help text.
 - The reader Home action now returns through the author place address, not just the home document deep link.
 - Reader Markdown links now keep `fork://` navigation inside Fork and refuse non-Fork URLs.
+- Writer page rows can copy ready-to-paste Markdown links to local document addresses.
 
 ## First Technical Questions To Resolve
 

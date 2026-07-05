@@ -186,6 +186,15 @@ struct ForkShell: View {
 
                             Spacer()
 
+                            Button {
+                                model.copyDraftMarkdownLink(draft.id)
+                            } label: {
+                                Label("Copy Markdown Link", systemImage: "link")
+                            }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.borderless)
+                            .help("Copy Markdown link")
+
                             if draft.id != "home" {
                                 Button {
                                     model.moveDraftUp(draft.id)
@@ -1180,6 +1189,24 @@ final class ForkAppModel: ObservableObject {
         statusMessage = "Address copied."
     }
 
+    func copyDraftMarkdownLink(_ id: String) {
+        guard let draft = draftForMarkdownLink(id) else {
+            statusMessage = "Markdown link could not be copied."
+            return
+        }
+
+        do {
+            let identity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
+            let link = "[\(markdownLinkTitle(draft.title))](\(identity.address.rawValue))"
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(link, forType: .string)
+            statusMessage = "Markdown link copied for \(draft.title)."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Markdown link could not be copied."
+        }
+    }
+
     func visitOwnPlace() {
         guard let authorAddress else {
             return
@@ -1427,6 +1454,26 @@ final class ForkAppModel: ObservableObject {
                 )
             )
         }
+    }
+
+    private func draftForMarkdownLink(_ id: String) -> DraftDocument? {
+        if id == selectedDraftID {
+            return DraftDocument(
+                id: selectedDraftID,
+                title: draftTitle,
+                markdown: draftMarkdown,
+                updatedAt: Date(),
+                pageOrder: currentDraftPageOrder()
+            )
+        }
+        return drafts.first { $0.id == id }
+    }
+
+    private func markdownLinkTitle(_ title: String) -> String {
+        title
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "[", with: "\\[")
+            .replacingOccurrences(of: "]", with: "\\]")
     }
 
     private func mergedDrafts(_ drafts: [DraftDocument], replacingWith currentDraft: DraftDocument) -> [DraftDocument] {
