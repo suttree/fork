@@ -261,6 +261,7 @@ Notes:
 - The sample author can be taken offline in the app after a live visit, so the cached-reader path is visible without leaving the prototype.
 - Taking the sample author offline while reading it now immediately refreshes the reader into the verified cached state.
 - Bringing the sample author online while reading it now immediately refreshes the reader back to the live signed state.
+- Sample online/offline transitions now share the same current-page refresh path.
 - The reader has a persisted theme picker with colorful reader-owned Classic, Starship, and NvChad modes. Authors may publish content and metadata, but the reader keeps final control of how pages look locally.
 
 ## Milestone 8: Bookmark-Led Browsing

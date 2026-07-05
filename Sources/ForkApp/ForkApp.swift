@@ -1186,23 +1186,13 @@ final class ForkAppModel: ObservableObject {
             if samplePeerOnline {
                 let shouldRefreshFromCache = page?.authorAddress == sampleAddress
                 stopSampleServer()
-                if shouldRefreshFromCache {
-                    let address = try ForkAddress(addressText.trimmingCharacters(in: .whitespacesAndNewlines))
-                    let renderedPage = try renderAddress(address.rawValue)
-                    show(renderedPage, displayedAddress: address.rawValue, addHistory: false)
-                    statusMessage = statusText(for: renderedPage)
-                } else {
+                if try refreshCurrentPageIfNeeded(shouldRefreshFromCache) == false {
                     statusMessage = "Sample author is offline. Verified cached copies remain readable."
                 }
             } else {
                 let shouldRefreshFromLive = page?.authorAddress == sampleAddress
                 try startSampleServer()
-                if shouldRefreshFromLive {
-                    let address = try ForkAddress(addressText.trimmingCharacters(in: .whitespacesAndNewlines))
-                    let renderedPage = try renderAddress(address.rawValue)
-                    show(renderedPage, displayedAddress: address.rawValue, addHistory: false)
-                    statusMessage = statusText(for: renderedPage)
-                } else {
+                if try refreshCurrentPageIfNeeded(shouldRefreshFromLive) == false {
                     statusMessage = "Sample author is online over localhost."
                 }
             }
@@ -1545,6 +1535,19 @@ final class ForkAppModel: ObservableObject {
             }
         }
         return nil
+    }
+
+    @discardableResult
+    private func refreshCurrentPageIfNeeded(_ shouldRefresh: Bool) throws -> Bool {
+        guard shouldRefresh else {
+            return false
+        }
+
+        let address = try ForkAddress(addressText.trimmingCharacters(in: .whitespacesAndNewlines))
+        let renderedPage = try renderAddress(address.rawValue)
+        show(renderedPage, displayedAddress: address.rawValue, addHistory: false)
+        statusMessage = statusText(for: renderedPage)
+        return true
     }
 
     private func renderAddress(_ rawAddress: String) throws -> RenderedPage {
