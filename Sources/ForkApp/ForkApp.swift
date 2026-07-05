@@ -1688,9 +1688,7 @@ final class ForkAppModel: ObservableObject {
 
     private func load() throws {
         let authorIdentity = try loadAuthorIdentity()
-        let documentIdentity = try loadDocumentIdentity(account: selectedDraftID)
         authorPeer.useAuthorIdentity(authorIdentity)
-        authorPeer.useDocumentIdentity(documentIdentity)
         authorAddress = authorIdentity.address
         ownPlaceAddress = authorIdentity.address.rawValue
         try startAuthorTransport()
@@ -1798,7 +1796,7 @@ final class ForkAppModel: ObservableObject {
         selectedDraftID = draft.id
         draftTitle = draft.title
         draftMarkdown = draft.markdown
-        refreshDraftDocumentAddress()
+        refreshDraftDocumentAddress(allowKeychainLookup: false)
         refreshUnpublishedDraftState()
     }
 
@@ -1807,7 +1805,17 @@ final class ForkAppModel: ObservableObject {
         refreshDraftDocumentAddresses()
     }
 
-    private func refreshDraftDocumentAddress() {
+    private func refreshDraftDocumentAddress(allowKeychainLookup: Bool = true) {
+        if let knownAddress = draftDocumentAddresses[selectedDraftID] {
+            draftDocumentAddress = knownAddress
+            return
+        }
+
+        guard allowKeychainLookup else {
+            draftDocumentAddress = ""
+            return
+        }
+
         do {
             let identity = try loadDocumentIdentity(account: selectedDraftID)
             draftDocumentAddress = identity.address.rawValue
@@ -1820,11 +1828,8 @@ final class ForkAppModel: ObservableObject {
 
     private func refreshDraftDocumentAddresses() {
         let draftIDs = Set(drafts.map(\.id))
-        var addresses = draftDocumentAddresses.filter { draftIDs.contains($0.key) }
-        if let selectedAddress = try? loadDocumentIdentity(account: selectedDraftID).address.rawValue {
-            addresses[selectedDraftID] = selectedAddress
-        }
-        draftDocumentAddresses = addresses
+        draftDocumentAddresses = draftDocumentAddresses.filter { draftIDs.contains($0.key) }
+        refreshDraftDocumentAddress(allowKeychainLookup: false)
     }
 
     private func publicationDocuments(currentDraft: DraftDocument) throws -> [(draftID: String, publication: LocalDocumentPublication)] {
@@ -1956,6 +1961,7 @@ final class ForkAppModel: ObservableObject {
         }
 
         currentPlaceHomeAddress = renderedPage.authorAddress.rawValue
+        rememberLocalDraftAddresses(from: manifest)
         placePages = manifest.payload.documents.map { document in
             ForkPlacePage(
                 id: document.address,
@@ -1966,6 +1972,23 @@ final class ForkAppModel: ObservableObject {
             )
         }
         canVisitPlaceHome = renderedPage.documentAddress.rawValue != manifest.payload.homeDocument
+    }
+
+    private func rememberLocalDraftAddresses(from manifest: SignedAuthorManifest) {
+        guard authorAddress?.key == manifest.payload.authorPublicKey else {
+            return
+        }
+
+        var addresses = draftDocumentAddresses
+        for document in manifest.payload.documents {
+            if document.role == "home" {
+                addresses["home"] = document.address
+            } else if let draft = drafts.first(where: { $0.title == document.title }) {
+                addresses[draft.id] = document.address
+            }
+        }
+        draftDocumentAddresses = addresses
+        refreshDraftDocumentAddress(allowKeychainLookup: false)
     }
 
     private func syncWriterSelection(for renderedPage: RenderedPage) {
@@ -1994,7 +2017,7 @@ final class ForkAppModel: ObservableObject {
     private func selectedDraftHasUnpublishedChanges() -> Bool {
         guard let page,
               page.authorAddress == authorAddress,
-              let selectedDraftAddress = try? loadDocumentIdentity(account: selectedDraftID).address,
+              let selectedDraftAddress = knownDocumentAddress(for: selectedDraftID),
               selectedDraftAddress == page.documentAddress else {
             return false
         }
@@ -2030,12 +2053,18 @@ final class ForkAppModel: ObservableObject {
     private func localDraft(for documentAddress: ForkAddress) throws -> DraftDocument? {
         let localDrafts = try draftProvider.loadDrafts()
         for draft in localDrafts {
-            let identity = try loadDocumentIdentity(account: draft.id)
-            if identity.address == documentAddress {
+            if knownDocumentAddress(for: draft.id) == documentAddress {
                 return draft
             }
         }
         return nil
+    }
+
+    private func knownDocumentAddress(for draftID: String) -> ForkAddress? {
+        guard let rawAddress = draftDocumentAddresses[draftID] else {
+            return nil
+        }
+        return try? ForkAddress(rawAddress)
     }
 
     @discardableResult

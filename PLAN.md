@@ -236,6 +236,7 @@ Notes:
 - Reader themes now apply across the app chrome, sidebar, Discover, and Editor surfaces instead of only styling rendered pages.
 - Editor drafts now save automatically as edits are made, without a visible Save Draft button.
 - Startup now avoids eager republishing and eager document-key lookups for every draft, reducing repeated Keychain prompts.
+- Startup writer sync now uses known public document addresses from signed manifests instead of opening draft private keys.
 
 ## Milestone 4: Signed Records
 
