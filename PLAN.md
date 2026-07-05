@@ -143,7 +143,8 @@ Notes:
 - Republishing after removing a page exports only the documents listed by the latest author manifest.
 - Cached document addresses can now be rendered directly as verified deep links.
 - The sidebar can now show and visit the pages listed by the current verified author manifest.
-- Next: improve page roles, ordering, and navigation back to the home document.
+- The reader toolbar can now jump from a document page back to the current place's home page.
+- Next: improve page roles and ordering.
 
 ## Milestone 4: Signed Records
 

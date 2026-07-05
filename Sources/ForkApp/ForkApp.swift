@@ -237,6 +237,11 @@ struct ForkShell: View {
                     }
                     .disabled(!model.canGoForward)
 
+                    Button(action: model.visitCurrentPlaceHome) {
+                        Label("Home", systemImage: "house")
+                    }
+                    .disabled(!model.canVisitPlaceHome)
+
                     Button(action: model.bookmarkCurrentPage) {
                         Label("Bookmark", systemImage: "bookmark")
                     }
@@ -779,6 +784,7 @@ final class ForkAppModel: ObservableObject {
     }
     @Published var canGoBack = false
     @Published var canGoForward = false
+    @Published var canVisitPlaceHome = false
     @Published var samplePlaceAddress: String?
     @Published var samplePeerOnline = false
     @Published var isConfirmingDraftDeletion = false
@@ -799,6 +805,7 @@ final class ForkAppModel: ObservableObject {
     private var history: [String] = []
     private var historyIndex: Int?
     private var pendingDraftDeletionID: String?
+    private var currentHomePageAddress: String?
 
     init() {
         do {
@@ -959,6 +966,13 @@ final class ForkAppModel: ObservableObject {
             return
         }
         visit(sampleAddress.rawValue)
+    }
+
+    func visitCurrentPlaceHome() {
+        guard let currentHomePageAddress else {
+            return
+        }
+        visit(currentHomePageAddress)
     }
 
     func toggleSamplePeer() {
@@ -1200,9 +1214,12 @@ final class ForkAppModel: ObservableObject {
     private func updatePlacePages(for renderedPage: RenderedPage) {
         guard let manifest = try? readerPeer.exportManifest(renderedPage.authorAddress) else {
             placePages = []
+            currentHomePageAddress = nil
+            canVisitPlaceHome = false
             return
         }
 
+        currentHomePageAddress = manifest.payload.homeDocument
         placePages = manifest.payload.documents.map { document in
             ForkPlacePage(
                 id: document.address,
@@ -1212,6 +1229,7 @@ final class ForkAppModel: ObservableObject {
                 isCurrent: document.address == renderedPage.documentAddress.rawValue
             )
         }
+        canVisitPlaceHome = renderedPage.documentAddress.rawValue != manifest.payload.homeDocument
     }
 
     private func restoreHistorySelection() {
