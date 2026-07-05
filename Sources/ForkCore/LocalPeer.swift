@@ -584,7 +584,7 @@ public final class LocalPeer: @unchecked Sendable {
         guard let current else {
             return incoming
         }
-        return incoming.recordVersion >= current.recordVersion ? incoming : current
+        return incoming.recordVersion > current.recordVersion ? incoming : current
     }
 }
 

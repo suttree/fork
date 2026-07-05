@@ -984,6 +984,127 @@ struct ForkCoreTests {
         #expect(renderedPage.previous == second.document.payload.previous)
     }
 
+    @Test("same-version document records do not replace cached records")
+    func sameVersionDocumentRecordsDoNotReplaceCachedRecords() throws {
+        let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
+        let secondDate = Date(timeIntervalSince1970: 1_783_078_500)
+        let authorIdentity = ForkIdentity(role: .author)
+        let documentIdentity = ForkIdentity(role: .document)
+        let firstPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "First",
+            markdown: "# First",
+            version: 1,
+            previous: nil,
+            createdAt: firstDate
+        )
+        let secondPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Second",
+            markdown: "# Second",
+            version: 1,
+            previous: nil,
+            createdAt: secondDate
+        )
+        let firstRecord = try ForkRecordSigner.signDocument(
+            payload: firstPayload,
+            with: documentIdentity
+        )
+        let secondRecord = try ForkRecordSigner.signDocument(
+            payload: secondPayload,
+            with: documentIdentity
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        try peer.accept(document: firstRecord, cachedAt: firstDate)
+        try peer.accept(document: secondRecord, cachedAt: secondDate)
+        let page = try peer.render(documentIdentity.address)
+
+        #expect(page.title == "First")
+        #expect(page.markdown == "# First")
+        #expect(page.source == .cache(firstDate))
+    }
+
+    @Test("same-version manifests do not replace cached manifests")
+    func sameVersionManifestsDoNotReplaceCachedManifests() throws {
+        let firstDate = Date(timeIntervalSince1970: 1_783_078_400)
+        let secondDate = Date(timeIntervalSince1970: 1_783_078_500)
+        let authorIdentity = ForkIdentity(role: .author)
+        let homeIdentity = ForkIdentity(role: .document)
+        let alternateIdentity = ForkIdentity(role: .document)
+        let homeDocumentPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(homeIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Home",
+            markdown: "# Home",
+            version: 1,
+            previous: nil,
+            createdAt: firstDate
+        )
+        let alternateDocumentPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(alternateIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Alternate",
+            markdown: "# Alternate",
+            version: 1,
+            previous: nil,
+            createdAt: secondDate
+        )
+        let firstManifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: homeIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: homeIdentity.address.rawValue,
+                    role: "home",
+                    title: "Home"
+                )
+            ],
+            createdAt: firstDate
+        )
+        let secondManifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: alternateIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: alternateIdentity.address.rawValue,
+                    role: "home",
+                    title: "Alternate"
+                )
+            ],
+            createdAt: secondDate
+        )
+        let peer = LocalPeer(name: "Reader")
+
+        try peer.accept(
+            document: try ForkRecordSigner.signDocument(payload: homeDocumentPayload, with: homeIdentity),
+            cachedAt: firstDate
+        )
+        try peer.accept(
+            document: try ForkRecordSigner.signDocument(payload: alternateDocumentPayload, with: alternateIdentity),
+            cachedAt: secondDate
+        )
+        try peer.accept(
+            manifest: try ForkRecordSigner.signManifest(payload: firstManifestPayload, with: authorIdentity),
+            cachedAt: firstDate
+        )
+        try peer.accept(
+            manifest: try ForkRecordSigner.signManifest(payload: secondManifestPayload, with: authorIdentity),
+            cachedAt: secondDate
+        )
+        let page = try peer.renderAuthor(authorIdentity.address)
+
+        #expect(page.title == "Home")
+        #expect(page.documentAddress == homeIdentity.address)
+        #expect(page.source == .cache(firstDate))
+    }
+
     @Test("publishing an empty document list is refused")
     func publishingEmptyDocumentListIsRefused() throws {
         let authorPeer = LocalPeer(name: "Author")
