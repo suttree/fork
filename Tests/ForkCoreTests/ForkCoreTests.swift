@@ -176,6 +176,55 @@ struct ForkCoreTests {
         #expect(cachedPage.markdown.contains("Still here offline."))
     }
 
+    @Test("author bundles exchange signed records without shared peer state")
+    func authorBundleExchange() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorPeer = LocalPeer(name: "Author")
+        let readerPeer = LocalPeer(name: "Reader")
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Bundled Place",
+            markdown: "# Bundled Place\n\nCarried as signed records.",
+            createdAt: now
+        )
+
+        let bundle = try authorPeer.exportAuthorBundle(authorAddress)
+        try readerPeer.importAuthorBundle(
+            bundle,
+            expectedAuthor: authorAddress,
+            cachedAt: now
+        )
+        let cachedPage = try readerPeer.renderAuthor(authorAddress)
+
+        #expect(bundle.documents.count == 1)
+        #expect(cachedPage.source == .cache(now))
+        #expect(cachedPage.markdown.contains("Carried as signed records."))
+    }
+
+    @Test("author bundles reject records for the wrong author")
+    func authorBundleRejectsWrongAuthor() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorPeer = LocalPeer(name: "Author")
+        let wrongAuthor = ForkIdentity(role: .author)
+        let authorAddress = authorPeer.createAuthorIdentity()
+        try authorPeer.publishHomePage(
+            title: "Bundled Place",
+            markdown: "# Bundled Place",
+            createdAt: now
+        )
+
+        let bundle = try authorPeer.exportAuthorBundle(authorAddress)
+        let readerPeer = LocalPeer(name: "Reader")
+
+        #expect(throws: ForkError.invalidSignature) {
+            try readerPeer.importAuthorBundle(
+                bundle,
+                expectedAuthor: wrongAuthor.address,
+                cachedAt: now
+            )
+        }
+    }
+
     @Test("tampered cache files are not rendered after restart")
     func tamperedCacheFilesAreNotRendered() throws {
         let rootURL = temporaryDirectory()

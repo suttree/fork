@@ -113,16 +113,8 @@ public final class LocalPeer: @unchecked Sendable {
     }
 
     public func fetchAuthor(_ address: ForkAddress, from peer: LocalPeer, at fetchedAt: Date = Date()) throws {
-        guard let manifest = peer.manifestsByAuthor[address.rawValue] else {
-            throw ForkError.missingManifest(address)
-        }
-        try accept(manifest: manifest, cachedAt: fetchedAt)
-
-        let documentAddress = try ForkAddress(manifest.payload.homeDocument)
-        guard let document = peer.documentsByAddress[documentAddress.rawValue] else {
-            throw ForkError.missingDocument(documentAddress)
-        }
-        try accept(document: document, cachedAt: fetchedAt)
+        let bundle = try peer.exportAuthorBundle(address)
+        try importAuthorBundle(bundle, expectedAuthor: address, cachedAt: fetchedAt)
     }
 
     public func renderAuthor(
@@ -153,6 +145,46 @@ public final class LocalPeer: @unchecked Sendable {
             throw ForkError.missingManifest(address)
         }
         return manifest
+    }
+
+    public func exportAuthorBundle(_ address: ForkAddress) throws -> AuthorRecordBundle {
+        let manifest = try exportManifest(address)
+        let documentAddresses = try manifest.payload.documents.map { document in
+            try ForkAddress(document.address)
+        }
+
+        let documents = try documentAddresses.map { address in
+            try exportDocument(address)
+        }
+
+        return AuthorRecordBundle(manifest: manifest, documents: documents)
+    }
+
+    public func importAuthorBundle(
+        _ bundle: AuthorRecordBundle,
+        expectedAuthor: ForkAddress,
+        cachedAt: Date = Date()
+    ) throws {
+        guard expectedAuthor.kind == .author,
+              bundle.manifest.payload.authorPublicKey == expectedAuthor.key else {
+            throw ForkError.invalidSignature
+        }
+
+        try accept(manifest: bundle.manifest, cachedAt: cachedAt)
+
+        let expectedDocumentKeys = Set(
+            try bundle.manifest.payload.documents.map { document in
+                try ForkAddress(document.address).key
+            }
+        )
+
+        for document in bundle.documents {
+            guard expectedDocumentKeys.contains(document.payload.documentPublicKey),
+                  document.payload.authorPublicKey == bundle.manifest.payload.authorPublicKey else {
+                throw ForkError.invalidSignature
+            }
+            try accept(document: document, cachedAt: cachedAt)
+        }
     }
 
     public func accept(document: SignedDocumentRecord, cachedAt: Date = Date()) throws {
