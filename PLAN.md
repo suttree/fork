@@ -44,6 +44,7 @@ Status: First in-memory vertical slice implemented.
 - History entries now prefer verified cached page titles over generic address labels.
 - Added verified cached rendering for `fork://doc/...` document deep links.
 - Added local bookmark nicknames so ugly key addresses can have personal labels.
+- Bookmark rows now distinguish author places from document pages.
 - Added document-address bookmarks and visible history entries in the sidebar.
 - Added copy controls for author and document addresses in the reader.
 - Added document version and previous-record hints in the reader.
@@ -226,6 +227,7 @@ Notes:
 - History entries use verified cached page titles when available.
 - Bookmarks now support local nicknames.
 - Bookmarking can now save author and document addresses.
+- Bookmark rows show whether a saved address is an author place or document page.
 
 ## First Technical Questions To Resolve
 

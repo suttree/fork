@@ -141,13 +141,13 @@ struct ForkShell: View {
                             Label {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(bookmark.displayTitle)
-                                    Text(bookmark.address)
+                                    Text(bookmark.subtitle)
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                 }
                             } icon: {
-                                Image(systemName: "bookmark")
+                                Image(systemName: bookmark.iconName)
                             }
                         }
                     }
@@ -277,6 +277,34 @@ struct ForkPlacePage: Identifiable, Equatable {
             return "Home"
         }
         return address
+    }
+}
+
+extension ForkBookmark {
+    var subtitle: String {
+        switch addressKind {
+        case .author:
+            "Author place"
+        case .document:
+            "Document page"
+        case nil:
+            address
+        }
+    }
+
+    var iconName: String {
+        switch addressKind {
+        case .author:
+            "person.crop.square"
+        case .document:
+            "doc.text"
+        case nil:
+            "bookmark"
+        }
+    }
+
+    private var addressKind: ForkAddress.Kind? {
+        (try? ForkAddress(address))?.kind
     }
 }
 
