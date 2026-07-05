@@ -152,6 +152,7 @@ Notes:
 - Publishing an added page no longer accidentally promotes it to the home page; the protected `home` draft remains the place entry point.
 - After publishing an added page, the reader stays on that page while the author address still resolves to Home.
 - The writer shows the selected draft's stable document address with a copy control.
+- Visiting one of your own signed pages now selects the matching local draft in the writer.
 - Non-home drafts can now be deleted from the writer, with confirmation, before the next signed publish.
 - Publishing now signs document records for every local draft and lists them in the author manifest, with the protected `home` draft as the home document.
 - Republishing after removing a page exports only the documents listed by the latest author manifest.

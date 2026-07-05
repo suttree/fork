@@ -1426,6 +1426,7 @@ final class ForkAppModel: ObservableObject {
         bookmarkLabel = bookmarkLabel(for: displayedAddress) ?? renderedPage.title
         UserDefaults.standard.set(displayedAddress, forKey: Self.lastAddressKey)
         updatePlacePages(for: renderedPage)
+        syncWriterSelection(for: renderedPage)
 
         if addHistory {
             if let index = historyIndex, index + 1 < history.count {
@@ -1492,6 +1493,36 @@ final class ForkAppModel: ObservableObject {
             )
         }
         canVisitPlaceHome = renderedPage.documentAddress.rawValue != manifest.payload.homeDocument
+    }
+
+    private func syncWriterSelection(for renderedPage: RenderedPage) {
+        guard renderedPage.authorAddress == authorAddress else {
+            return
+        }
+
+        do {
+            guard let draft = try localDraft(for: renderedPage.documentAddress),
+                  draft.id != selectedDraftID else {
+                return
+            }
+
+            _ = try persistDraft()
+            applyDraft(draft)
+            try refreshDrafts()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func localDraft(for documentAddress: ForkAddress) throws -> DraftDocument? {
+        let localDrafts = try draftProvider.loadDrafts()
+        for draft in localDrafts {
+            let identity = try identityProvider.loadOrCreateDocumentIdentity(account: draft.id)
+            if identity.address == documentAddress {
+                return draft
+            }
+        }
+        return nil
     }
 
     private func restoreHistorySelection() {
