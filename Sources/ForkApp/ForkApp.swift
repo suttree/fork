@@ -183,6 +183,24 @@ struct ForkShell: View {
 
                             if draft.id != "home" {
                                 Button {
+                                    model.moveDraftUp(draft.id)
+                                } label: {
+                                    Label("Move Page Up", systemImage: "arrow.up")
+                                }
+                                .labelStyle(.iconOnly)
+                                .buttonStyle(.borderless)
+                                .help("Move page up")
+
+                                Button {
+                                    model.moveDraftDown(draft.id)
+                                } label: {
+                                    Label("Move Page Down", systemImage: "arrow.down")
+                                }
+                                .labelStyle(.iconOnly)
+                                .buttonStyle(.borderless)
+                                .help("Move page down")
+
+                                Button {
                                     model.requestDraftDeletion(draft.id)
                                 } label: {
                                     Label("Delete Page", systemImage: "trash")
@@ -908,6 +926,14 @@ final class ForkAppModel: ObservableObject {
         }
     }
 
+    func moveDraftUp(_ id: String) {
+        moveDraft(id, direction: .up)
+    }
+
+    func moveDraftDown(_ id: String) {
+        moveDraft(id, direction: .down)
+    }
+
     func requestDraftDeletion(_ id: String) {
         guard id != "home" else {
             statusMessage = "The home page cannot be deleted."
@@ -947,6 +973,18 @@ final class ForkAppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Page could not be deleted."
+        }
+    }
+
+    private func moveDraft(_ id: String, direction: DraftMoveDirection) {
+        do {
+            _ = try persistDraft()
+            try draftProvider.moveDraft(id: id, direction: direction)
+            try refreshDrafts()
+            statusMessage = "Page order updated. Publish to update your signed place."
+        } catch {
+            errorMessage = error.localizedDescription
+            statusMessage = "Page order could not be updated."
         }
     }
 
@@ -1126,7 +1164,8 @@ final class ForkAppModel: ObservableObject {
             id: selectedDraftID,
             title: draftTitle,
             markdown: draftMarkdown,
-            updatedAt: Date()
+            updatedAt: Date(),
+            pageOrder: currentDraftPageOrder()
         )
         try draftProvider.saveDraft(draft)
         return draft
@@ -1179,15 +1218,17 @@ final class ForkAppModel: ObservableObject {
     private func mergedDrafts(_ drafts: [DraftDocument], replacingWith currentDraft: DraftDocument) -> [DraftDocument] {
         var merged = drafts.filter { $0.id != currentDraft.id }
         merged.append(currentDraft)
-        return merged.sorted { lhs, rhs in
-            if lhs.id == "home" {
-                return true
-            }
-            if rhs.id == "home" {
-                return false
-            }
-            return lhs.updatedAt > rhs.updatedAt
+        return merged.sorted(by: StoredDraftProvider.sortDrafts)
+    }
+
+    private func currentDraftPageOrder() -> Int {
+        if let draft = drafts.first(where: { $0.id == selectedDraftID }) {
+            return draft.pageOrder
         }
+        guard selectedDraftID != "home" else {
+            return 0
+        }
+        return (drafts.filter { $0.id != "home" }.map(\.pageOrder).max() ?? 0) + 1
     }
 
     private func show(_ renderedPage: RenderedPage, displayedAddress: String, addHistory: Bool) {

@@ -263,6 +263,42 @@ struct ForkCoreTests {
         #expect(drafts.map(\.id) == ["home", "later", "middle"])
     }
 
+    @Test("draft provider keeps explicit page order")
+    func draftProviderKeepsExplicitPageOrder() throws {
+        let store = MemoryDraftStore()
+        let provider = StoredDraftProvider(store: store)
+        try provider.saveDraft(
+            DraftDocument(
+                id: "later",
+                title: "Later",
+                markdown: "# Later",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_500),
+                pageOrder: 2
+            )
+        )
+        try provider.saveDraft(
+            DraftDocument(
+                id: "home",
+                title: "Home",
+                markdown: "# Home",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_300)
+            )
+        )
+        try provider.saveDraft(
+            DraftDocument(
+                id: "middle",
+                title: "Middle",
+                markdown: "# Middle",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_400),
+                pageOrder: 1
+            )
+        )
+
+        let drafts = try provider.loadDrafts()
+
+        #expect(drafts.map(\.id) == ["home", "middle", "later"])
+    }
+
     @Test("draft provider creates a new draft")
     func draftProviderCreatesNewDraft() throws {
         let provider = StoredDraftProvider(store: MemoryDraftStore())
@@ -272,6 +308,51 @@ struct ForkCoreTests {
 
         #expect(loaded == draft)
         #expect(draft.title == "Untitled Page")
+        #expect(draft.pageOrder == 1)
+    }
+
+    @Test("draft provider moves non-home pages")
+    func draftProviderMovesNonHomePages() throws {
+        let store = MemoryDraftStore()
+        let provider = StoredDraftProvider(store: store)
+        try provider.saveDraft(
+            DraftDocument(
+                id: "home",
+                title: "Home",
+                markdown: "# Home",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_300)
+            )
+        )
+        try provider.saveDraft(
+            DraftDocument(
+                id: "first",
+                title: "First",
+                markdown: "# First",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_400),
+                pageOrder: 1
+            )
+        )
+        try provider.saveDraft(
+            DraftDocument(
+                id: "second",
+                title: "Second",
+                markdown: "# Second",
+                updatedAt: Date(timeIntervalSince1970: 1_783_078_500),
+                pageOrder: 2
+            )
+        )
+
+        try provider.moveDraft(id: "second", direction: .up)
+        var drafts = try provider.loadDrafts()
+
+        #expect(drafts.map(\.id) == ["home", "second", "first"])
+        #expect(drafts.first { $0.id == "second" }?.pageOrder == 1)
+        #expect(drafts.first { $0.id == "first" }?.pageOrder == 2)
+
+        try provider.moveDraft(id: "second", direction: .down)
+        drafts = try provider.loadDrafts()
+
+        #expect(drafts.map(\.id) == ["home", "first", "second"])
     }
 
     @Test("draft provider deletes non-home drafts")

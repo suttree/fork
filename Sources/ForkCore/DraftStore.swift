@@ -5,13 +5,37 @@ public struct DraftDocument: Codable, Equatable, Identifiable, Sendable {
     public var title: String
     public var markdown: String
     public var updatedAt: Date
+    public var pageOrder: Int
 
-    public init(id: String, title: String, markdown: String, updatedAt: Date) {
+    public init(id: String, title: String, markdown: String, updatedAt: Date, pageOrder: Int = 0) {
         self.id = id
         self.title = title
         self.markdown = markdown
         self.updatedAt = updatedAt
+        self.pageOrder = pageOrder
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case markdown
+        case updatedAt
+        case pageOrder
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        markdown = try container.decode(String.self, forKey: .markdown)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        pageOrder = try container.decodeIfPresent(Int.self, forKey: .pageOrder) ?? 0
+    }
+}
+
+public enum DraftMoveDirection: Sendable {
+    case up
+    case down
 }
 
 public protocol DraftStore: Sendable {
@@ -49,15 +73,7 @@ public struct StoredDraftProvider: Sendable {
 
     public func loadDrafts() throws -> [DraftDocument] {
         try store.loadDrafts()
-            .sorted { lhs, rhs in
-                if lhs.id == "home" {
-                    return true
-                }
-                if rhs.id == "home" {
-                    return false
-                }
-                return lhs.updatedAt > rhs.updatedAt
-            }
+            .sorted(by: Self.sortDrafts)
     }
 
     public func loadDraft(id: String) throws -> DraftDocument? {
@@ -69,7 +85,8 @@ public struct StoredDraftProvider: Sendable {
             id: UUID().uuidString,
             title: "Untitled Page",
             markdown: "# Untitled Page\n\n",
-            updatedAt: now
+            updatedAt: now,
+            pageOrder: try nextPageOrder()
         )
         try store.saveDraft(draft)
         return draft
@@ -84,6 +101,60 @@ public struct StoredDraftProvider: Sendable {
             throw ForkError.protectedDraft(id)
         }
         try store.deleteDraft(id: id)
+    }
+
+    public func moveDraft(id: String, direction: DraftMoveDirection) throws {
+        guard id != "home" else {
+            throw ForkError.protectedDraft(id)
+        }
+
+        var pageDrafts = try loadDrafts().filter { $0.id != "home" }
+        guard let currentIndex = pageDrafts.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        let targetIndex: Int
+        switch direction {
+        case .up:
+            targetIndex = currentIndex - 1
+        case .down:
+            targetIndex = currentIndex + 1
+        }
+
+        guard pageDrafts.indices.contains(targetIndex) else {
+            return
+        }
+
+        pageDrafts.swapAt(currentIndex, targetIndex)
+        try saveOrderedPageDrafts(pageDrafts)
+    }
+
+    public static func sortDrafts(_ lhs: DraftDocument, _ rhs: DraftDocument) -> Bool {
+        if lhs.id == "home" {
+            return true
+        }
+        if rhs.id == "home" {
+            return false
+        }
+        if lhs.pageOrder != rhs.pageOrder {
+            return lhs.pageOrder < rhs.pageOrder
+        }
+        return lhs.updatedAt > rhs.updatedAt
+    }
+
+    private func nextPageOrder() throws -> Int {
+        let pageOrders = try store.loadDrafts()
+            .filter { $0.id != "home" }
+            .map(\.pageOrder)
+        return (pageOrders.max() ?? 0) + 1
+    }
+
+    private func saveOrderedPageDrafts(_ drafts: [DraftDocument]) throws {
+        for (offset, draft) in drafts.enumerated() {
+            var orderedDraft = draft
+            orderedDraft.pageOrder = offset + 1
+            try store.saveDraft(orderedDraft)
+        }
     }
 }
 

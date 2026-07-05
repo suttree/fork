@@ -39,6 +39,7 @@ Status: First in-memory vertical slice implemented.
 - Publishing from any page keeps the `home` draft as the author place home while including added pages in the manifest.
 - Publishing an added page keeps that page visible after publish instead of bouncing the reader back to Home.
 - Added draft deletion for non-home pages in the writer.
+- Added explicit local page ordering for writer drafts.
 - Added multi-document publishing so the signed author manifest can list every local draft.
 - Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.
 - Incomplete author bundles are rejected before anything is cached.
@@ -135,6 +136,7 @@ Notes:
 - The writer has an edit/preview switch for local Markdown drafts.
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
 - The writer exposes Add Page from the writing surface, so authors can add pages without hunting through the sidebar.
+- The writer exposes move-up and move-down controls for non-home pages.
 - Publishing an added page no longer accidentally promotes it to the home page; the protected `home` draft remains the place entry point.
 - After publishing an added page, the reader stays on that page while the author address still resolves to Home.
 - The writer shows the selected draft's stable document address with a copy control.
@@ -144,7 +146,7 @@ Notes:
 - Cached document addresses can now be rendered directly as verified deep links.
 - The sidebar can now show and visit the pages listed by the current verified author manifest.
 - The reader toolbar can now jump from a document page back to the current place's home page.
-- Next: improve page roles and ordering.
+- Next: improve page roles and page-management polish.
 
 ## Milestone 4: Signed Records
 
