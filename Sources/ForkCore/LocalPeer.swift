@@ -397,8 +397,18 @@ public final class LocalPeer: @unchecked Sendable {
               manifestDocumentAddresses.contains(homeDocumentAddress) else {
             throw ForkError.invalidSignature
         }
+        guard manifestDocumentAddresses.allSatisfy(hasValidAddressPublicKey) else {
+            throw ForkError.invalidSignature
+        }
 
         return manifestDocumentAddresses
+    }
+
+    private func hasValidAddressPublicKey(_ address: ForkAddress) -> Bool {
+        guard let publicKeyData = try? address.publicKeyData else {
+            return false
+        }
+        return (try? ForkIdentity.validatePublicKey(publicKeyData)) != nil
     }
 
     private func loadCachedRecords() throws {

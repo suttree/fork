@@ -88,6 +88,30 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("document records with malformed document keys are refused")
+    func documentRecordsWithMalformedDocumentKeysAreRefused() throws {
+        let author = ForkIdentity(role: .author)
+        let document = ForkIdentity(role: .document)
+        let malformedDocumentKey = Base64URL.encode(Data(repeating: 0, count: 31))
+        let payload = DocumentRecordPayload(
+            documentPublicKey: malformedDocumentKey,
+            authorPublicKey: Base64URL.encode(author.publicKeyData),
+            title: "Malformed Document",
+            markdown: "# Malformed Document",
+            version: 1,
+            previous: nil,
+            createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+
+        let record = try ForkRecordSigner.signDocument(payload: payload, with: document)
+        let peer = LocalPeer(name: "Reader")
+
+        #expect(try ForkRecordSigner.verify(record) == false)
+        #expect(throws: ForkError.invalidSignature) {
+            try peer.accept(document: record)
+        }
+    }
+
     @Test("author and document addresses are key-derived")
     func addressesAreKeyDerived() throws {
         let author = ForkIdentity(role: .author)
@@ -654,6 +678,43 @@ struct ForkCoreTests {
         )
         let readerPeer = LocalPeer(name: "Reader")
 
+        #expect(throws: ForkError.invalidSignature) {
+            try readerPeer.accept(manifest: manifest, cachedAt: now)
+        }
+        #expect(throws: ForkError.missingManifest(authorIdentity.address)) {
+            try readerPeer.renderAuthor(authorIdentity.address)
+        }
+    }
+
+    @Test("direct manifest accept rejects malformed document addresses")
+    func directManifestAcceptRejectsMalformedDocumentAddresses() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let malformedAddress = ForkAddress(
+            kind: .document,
+            publicKeyData: Data(repeating: 0, count: 31)
+        )
+        let manifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: malformedAddress.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: malformedAddress.rawValue,
+                    role: "home",
+                    title: "Malformed"
+                )
+            ],
+            createdAt: now
+        )
+        let manifest = try ForkRecordSigner.signManifest(
+            payload: manifestPayload,
+            with: authorIdentity
+        )
+        let readerPeer = LocalPeer(name: "Reader")
+
+        #expect(try ForkRecordSigner.verify(manifest) == true)
         #expect(throws: ForkError.invalidSignature) {
             try readerPeer.accept(manifest: manifest, cachedAt: now)
         }
