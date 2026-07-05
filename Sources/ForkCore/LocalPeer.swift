@@ -331,6 +331,12 @@ public final class LocalPeer: @unchecked Sendable {
                 throw ForkError.invalidSignature
             }
         }
+        guard manifestTitlesMatchDocuments(
+            bundle.manifest.payload.documents,
+            documents: bundle.documents
+        ) else {
+            throw ForkError.invalidSignature
+        }
 
         try validateReplacementChain(
             current: manifestsByAuthor[expectedAuthor.rawValue],
@@ -437,6 +443,24 @@ public final class LocalPeer: @unchecked Sendable {
     ) -> Bool {
         zip(documents, addresses).allSatisfy { document, address in
             document.role == (address == homeDocument ? "home" : "page")
+        }
+    }
+
+    private func manifestTitlesMatchDocuments(
+        _ manifestDocuments: [AuthorManifestDocument],
+        documents: [SignedDocumentRecord]
+    ) -> Bool {
+        let documentTitlesByKey = Dictionary(
+            uniqueKeysWithValues: documents.map { document in
+                (document.payload.documentPublicKey, document.payload.title)
+            }
+        )
+
+        return manifestDocuments.allSatisfy { document in
+            guard let address = try? ForkAddress(document.address) else {
+                return false
+            }
+            return documentTitlesByKey[address.key] == document.title
         }
     }
 

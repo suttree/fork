@@ -809,6 +809,56 @@ struct ForkCoreTests {
         }
     }
 
+    @Test("author bundles reject manifest titles that do not match documents")
+    func authorBundlesRejectMismatchedManifestTitles() throws {
+        let now = Date(timeIntervalSince1970: 1_783_078_400)
+        let authorIdentity = ForkIdentity(role: .author)
+        let documentIdentity = ForkIdentity(role: .document)
+        let readerPeer = LocalPeer(name: "Reader")
+        let documentPayload = DocumentRecordPayload(
+            documentPublicKey: Base64URL.encode(documentIdentity.publicKeyData),
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            title: "Signed Document Title",
+            markdown: "# Signed Document Title",
+            version: 1,
+            previous: nil,
+            createdAt: now
+        )
+        let document = try ForkRecordSigner.signDocument(
+            payload: documentPayload,
+            with: documentIdentity
+        )
+        let manifestPayload = AuthorManifestPayload(
+            authorPublicKey: Base64URL.encode(authorIdentity.publicKeyData),
+            version: 1,
+            previous: nil,
+            homeDocument: documentIdentity.address.rawValue,
+            documents: [
+                AuthorManifestDocument(
+                    address: documentIdentity.address.rawValue,
+                    role: "home",
+                    title: "Different Manifest Title"
+                )
+            ],
+            createdAt: now
+        )
+        let manifest = try ForkRecordSigner.signManifest(
+            payload: manifestPayload,
+            with: authorIdentity
+        )
+
+        #expect(throws: ForkError.invalidSignature) {
+            try readerPeer.importAuthorBundle(
+                AuthorRecordBundle(manifest: manifest, documents: [document]),
+                expectedAuthor: authorIdentity.address,
+                cachedAt: now
+            )
+        }
+        #expect(throws: ForkError.missingManifest(authorIdentity.address)) {
+            try readerPeer.renderAuthor(authorIdentity.address)
+        }
+    }
+
     @Test("author bundles reject bad update chains without partial caching")
     func authorBundlesRejectBadUpdateChainsWithoutPartialCaching() throws {
         let firstDate = Date(timeIntervalSince1970: 1_783_078_400)

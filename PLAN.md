@@ -49,6 +49,7 @@ Status: First in-memory vertical slice implemented.
 - Incomplete author bundles are rejected before anything is cached.
 - Bundles with bad update chains are rejected before any newer manifest or document is cached.
 - Author bundles with duplicate document records are rejected before anything is cached.
+- Author bundles now reject manifest page titles that disagree with the signed document records.
 - Author bundles now reject manifests whose home page is not one of the listed document pages.
 - Manifests now reject duplicate document addresses and page roles that disagree with the home document.
 - Cache reload now restores only complete verified author bundles after restart.
