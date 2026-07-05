@@ -169,6 +169,7 @@ Notes:
 - Publishing an added page no longer accidentally promotes it to the home page; the protected `home` draft remains the place entry point.
 - After publishing an added page, the reader stays on that page while the author address still resolves to Home.
 - The writer shows the selected draft's stable document address with a copy control.
+- The selected draft address area can also copy a ready Markdown link.
 - The writer can copy any local page as a Markdown `fork://` link for building trails between pages.
 - Visiting one of your own signed pages now selects the matching local draft in the writer.
 - Non-home drafts can now be deleted from the writer, with confirmation, before the next signed publish.

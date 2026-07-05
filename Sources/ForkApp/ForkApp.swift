@@ -262,6 +262,7 @@ struct ForkShell: View {
                         documentAddress: model.draftDocumentAddress,
                         status: model.statusMessage,
                         createPage: model.createDraft,
+                        copyMarkdownLink: model.copySelectedDraftMarkdownLink,
                         autosaveDraft: model.autosaveDraft,
                         saveDraft: model.saveDraft,
                         publish: model.publish
@@ -786,6 +787,7 @@ struct WriterPreview: View {
     let documentAddress: String
     let status: String
     let createPage: () -> Void
+    let copyMarkdownLink: () -> Void
     let autosaveDraft: () -> Void
     let saveDraft: () -> Void
     let publish: () -> Void
@@ -825,7 +827,16 @@ struct WriterPreview: View {
                 Text("Document Address")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                DraftAddressCopyRow(address: documentAddress)
+                HStack(spacing: 10) {
+                    DraftAddressCopyRow(address: documentAddress)
+
+                    Button(action: copyMarkdownLink) {
+                        Label("Copy Markdown Link", systemImage: "link")
+                    }
+                    .labelStyle(.iconOnly)
+                    .help("Copy Markdown link")
+                    .disabled(documentAddress.isEmpty)
+                }
             }
 
             Group {
@@ -1209,6 +1220,10 @@ final class ForkAppModel: ObservableObject {
             errorMessage = error.localizedDescription
             statusMessage = "Markdown link could not be copied."
         }
+    }
+
+    func copySelectedDraftMarkdownLink() {
+        copyDraftMarkdownLink(selectedDraftID)
     }
 
     func visitOwnPlace() {
