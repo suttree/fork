@@ -11,13 +11,44 @@ public struct ForkBookmark: Codable, Equatable, Identifiable, Sendable {
         self.id = address
         self.address = address
         self.title = title
-        self.nickname = nickname
+        self.nickname = Self.normalizedNickname(nickname)
         self.createdAt = createdAt
     }
 
     public var displayTitle: String {
+        nickname ?? title
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case address
+        case title
+        case nickname
+        case createdAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let address = try container.decode(String.self, forKey: .address)
+        self.id = try container.decodeIfPresent(String.self, forKey: .id) ?? address
+        self.address = address
+        self.title = try container.decode(String.self, forKey: .title)
+        self.nickname = Self.normalizedNickname(try container.decodeIfPresent(String.self, forKey: .nickname))
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(address, forKey: .address)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(nickname, forKey: .nickname)
+        try container.encode(createdAt, forKey: .createdAt)
+    }
+
+    private static func normalizedNickname(_ nickname: String?) -> String? {
         let trimmedNickname = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmedNickname.isEmpty ? title : trimmedNickname
+        return trimmedNickname.isEmpty ? nil : trimmedNickname
     }
 }
 

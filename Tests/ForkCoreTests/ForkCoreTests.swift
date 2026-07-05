@@ -465,6 +465,36 @@ struct ForkCoreTests {
         #expect(bookmark.displayTitle == "Original Title")
     }
 
+    @Test("bookmark nicknames are normalized")
+    func bookmarkNicknamesAreNormalized() throws {
+        let paddedBookmark = ForkBookmark(
+            address: "fork://author/example",
+            title: "Original Title",
+            nickname: "  Local Example  ",
+            createdAt: Date(timeIntervalSince1970: 1_783_078_400)
+        )
+        let blankBookmark = ForkBookmark(
+            address: "fork://doc/example",
+            title: "Document Title",
+            nickname: "\n\t ",
+            createdAt: Date(timeIntervalSince1970: 1_783_078_401)
+        )
+
+        #expect(paddedBookmark.nickname == "Local Example")
+        #expect(paddedBookmark.displayTitle == "Local Example")
+        #expect(blankBookmark.nickname == nil)
+        #expect(blankBookmark.displayTitle == "Document Title")
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(ForkBookmark.self, from: encoder.encode(paddedBookmark))
+
+        #expect(decoded.nickname == "Local Example")
+        #expect(decoded.displayTitle == "Local Example")
+    }
+
     @Test("verified records survive a cache-backed peer restart")
     func verifiedRecordsSurviveRestart() throws {
         let rootURL = temporaryDirectory()
