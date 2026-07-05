@@ -679,6 +679,17 @@ enum ForkReaderTheme: String, CaseIterable, Identifiable {
         }
     }
 
+    var selectedControlText: Color {
+        switch self {
+        case .system:
+            Color.white
+        case .paper:
+            Color(red: 0.03, green: 0.05, blue: 0.08)
+        case .night:
+            Color(red: 0.04, green: 0.05, blue: 0.07)
+        }
+    }
+
     var divider: Color {
         switch self {
         case .system:
@@ -1068,13 +1079,24 @@ struct EditorWorkspace: View {
                 }
                 .buttonStyle(.borderedProminent)
 
-                Picker("Editor Mode", selection: $mode) {
+                HStack(spacing: 2) {
                     ForEach(Mode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Button {
+                            self.mode = mode
+                        } label: {
+                            Text(mode.rawValue)
+                                .font(.body.weight(.semibold))
+                                .frame(width: 68, height: 30)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(self.mode == mode ? theme.selectedControlText : theme.primaryText)
+                        .background(self.mode == mode ? theme.accent : theme.editorSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
                     }
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 150)
+                .padding(2)
+                .background(theme.editorSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
