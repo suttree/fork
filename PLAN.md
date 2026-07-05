@@ -42,6 +42,7 @@ Status: First in-memory vertical slice implemented.
 - Wired the prototype editor to save drafts and publish signed records from the current draft.
 - Added a draft list in the writer, with new-page creation and selection.
 - Added a first-class Add Page action in the writer so authors can grow a place from the writing flow.
+- The writer page manager can publish the place directly after page-list changes.
 - Publishing from any page keeps the `home` draft as the author place home while including added pages in the manifest.
 - Publishing an added page keeps that page visible after publish instead of bouncing the reader back to Home.
 - Added draft deletion for non-home pages in the writer.
@@ -159,6 +160,7 @@ Notes:
 - Draft titles are now trimmed before saving, with blank titles falling back to `Untitled Page`.
 - The writer can now create and switch between local Markdown drafts. Each draft uses its own stored document identity when published.
 - The writer exposes Add Page from the writing surface, so authors can add pages without hunting through the sidebar.
+- The writer sidebar exposes Publish Place beside page management actions.
 - The writer exposes move-up and move-down controls for non-home pages.
 - The writer labels ordered pages as Page 1, Page 2, etc. while keeping Home distinct.
 - The writer sidebar now uses home-specific icons so the place entry page stays visually distinct.

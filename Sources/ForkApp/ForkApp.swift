@@ -171,6 +171,10 @@ struct ForkShell: View {
                         Label("Add Page", systemImage: "plus")
                     }
 
+                    Button(action: model.publish) {
+                        Label("Publish Place", systemImage: "signature")
+                    }
+
                     ForEach(model.drafts) { draft in
                         HStack(spacing: 8) {
                             Button {
