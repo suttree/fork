@@ -41,6 +41,7 @@ Status: First in-memory vertical slice implemented.
 - Added a second sample author place in the app, fetched over its own loopback peer.
 - Added a sample-author online/offline toggle to demonstrate verified cached reading in the app.
 - Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
+- History entries now prefer verified cached page titles over generic address labels.
 - Added verified cached rendering for `fork://doc/...` document deep links.
 - Added local bookmark nicknames so ugly key addresses can have personal labels.
 - Added document-address bookmarks and visible history entries in the sidebar.
@@ -222,6 +223,7 @@ Notes:
 
 - The app now has a Fork address field, bookmark persistence, and back/forward history for visited author places.
 - The address field can visit cached author and document addresses.
+- History entries use verified cached page titles when available.
 - Bookmarks now support local nicknames.
 - Bookmarking can now save author and document addresses.
 

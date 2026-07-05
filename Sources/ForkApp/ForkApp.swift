@@ -1019,6 +1019,10 @@ final class ForkAppModel: ObservableObject {
             return address
         }
 
+        if let renderedPage = try? readerPeer.render(forkAddress) {
+            return renderedPage.title
+        }
+
         switch forkAddress.kind {
         case .author:
             return "Author place"
