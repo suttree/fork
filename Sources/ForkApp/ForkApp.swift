@@ -143,29 +143,35 @@ struct ForkShell: View {
                 }
 
                 Section("Bookmarks") {
-                    ForEach(model.bookmarks) { bookmark in
-                        HStack(spacing: 8) {
-                            Button {
-                                model.visit(bookmark.address)
-                            } label: {
-                                SidebarRow(
-                                    title: bookmark.displayTitle,
-                                    subtitle: bookmark.subtitle,
-                                    iconName: bookmark.iconName
-                                )
-                            }
-                            .buttonStyle(.plain)
+                    if model.bookmarks.isEmpty {
+                        Text("No bookmarks yet")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(model.bookmarks) { bookmark in
+                            HStack(spacing: 8) {
+                                Button {
+                                    model.visit(bookmark.address)
+                                } label: {
+                                    SidebarRow(
+                                        title: bookmark.displayTitle,
+                                        subtitle: bookmark.subtitle,
+                                        iconName: bookmark.iconName
+                                    )
+                                }
+                                .buttonStyle(.plain)
 
-                            Spacer()
+                                Spacer()
 
-                            Button {
-                                model.deleteBookmark(bookmark.address)
-                            } label: {
-                                Label("Delete Bookmark", systemImage: "trash")
+                                Button {
+                                    model.deleteBookmark(bookmark.address)
+                                } label: {
+                                    Label("Delete Bookmark", systemImage: "trash")
+                                }
+                                .labelStyle(.iconOnly)
+                                .buttonStyle(.borderless)
+                                .help("Delete bookmark")
                             }
-                            .labelStyle(.iconOnly)
-                            .buttonStyle(.borderless)
-                            .help("Delete bookmark")
                         }
                     }
                 }

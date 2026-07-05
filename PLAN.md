@@ -314,6 +314,7 @@ Notes:
 - Bookmark nicknames are now trimmed before saving, with blank nicknames falling back to page titles.
 - Bookmark saves now immediately show the normalized local display title in the nickname field.
 - Bookmark rows show whether a saved address is an author place or document page.
+- Empty bookmarks now have a quiet visible state.
 - Bookmark rows can now delete saved entries.
 - Bookmark delete feedback now distinguishes removed entries from entries already gone.
 - History rows refresh immediately when bookmark nicknames are saved or deleted.
