@@ -154,6 +154,7 @@ Notes:
 - The writer exposes Add Page from the writing surface, so authors can add pages without hunting through the sidebar.
 - The writer exposes move-up and move-down controls for non-home pages.
 - The writer labels ordered pages as Page 1, Page 2, etc. while keeping Home distinct.
+- The writer sidebar now uses home-specific icons so the place entry page stays visually distinct.
 - Publishing an added page no longer accidentally promotes it to the home page; the protected `home` draft remains the place entry point.
 - After publishing an added page, the reader stays on that page while the author address still resolves to Home.
 - The writer shows the selected draft's stable document address with a copy control.

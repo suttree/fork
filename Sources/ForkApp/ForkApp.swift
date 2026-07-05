@@ -221,7 +221,7 @@ struct ForkShell: View {
                                             .lineLimit(1)
                                     }
                                 } icon: {
-                                    Image(systemName: draft.id == model.selectedDraftID ? "square.and.pencil" : "doc")
+                                    Image(systemName: draftIconName(for: draft))
                                 }
                             }
                             .buttonStyle(.plain)
@@ -361,6 +361,13 @@ struct ForkShell: View {
             return "Place page"
         }
         return "Page \(index + 1)"
+    }
+
+    private func draftIconName(for draft: DraftDocument) -> String {
+        if draft.id == "home" {
+            return draft.id == model.selectedDraftID ? "house.fill" : "house"
+        }
+        return draft.id == model.selectedDraftID ? "square.and.pencil" : "doc"
     }
 }
 
