@@ -403,7 +403,7 @@ struct WriterPreview: View {
                 }
 
                 Button(action: publish) {
-                    Label("Publish Signed Record", systemImage: "signature")
+                    Label("Publish Signed Place", systemImage: "signature")
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -505,7 +505,7 @@ final class ForkAppModel: ObservableObject {
             )
             addressText = authorAddress.rawValue
             try refreshDrafts()
-            statusMessage = "Published signed record over localhost."
+            statusMessage = "Published signed place over localhost."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Publish failed."
@@ -579,7 +579,7 @@ final class ForkAppModel: ObservableObject {
                 renderedPage = try readerPeer.render(address)
             }
             show(renderedPage, displayedAddress: address.rawValue, addHistory: true)
-            statusMessage = renderedPage.source == .live ? "Showing live signed record." : "Showing verified cached record."
+            statusMessage = renderedPage.source == .live ? "Showing live signed place." : "Showing verified cached page."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Address unavailable."
@@ -753,7 +753,7 @@ final class ForkAppModel: ObservableObject {
             let address = try ForkAddress(history[index])
             let renderedPage = try readerPeer.render(address)
             show(renderedPage, displayedAddress: address.rawValue, addHistory: false)
-            statusMessage = "Showing verified cached record."
+            statusMessage = "Showing verified cached page."
             updateHistoryEntries()
             updateHistoryAvailability()
         } catch {
