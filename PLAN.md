@@ -38,6 +38,7 @@ Status: First in-memory vertical slice implemented.
 - Added verified cached rendering for `fork://doc/...` document deep links.
 - Added local bookmark nicknames so ugly key addresses can have personal labels.
 - Added document-address bookmarks and visible history entries in the sidebar.
+- Added copy controls for author and document addresses in the reader.
 - Added tests for the vertical slice, tamper refusal, and key-derived addresses.
 
 Still not done:
@@ -85,6 +86,7 @@ Notes:
 
 - `ForkApp` now loads or creates its author identity through Keychain.
 - Tests use an in-memory identity store so they do not touch the user's Keychain.
+- The reader exposes copy controls for key-derived addresses.
 
 ## Milestone 3: Markdown Documents
 

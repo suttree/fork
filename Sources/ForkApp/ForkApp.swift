@@ -1,4 +1,5 @@
 import ForkCore
+import AppKit
 import Foundation
 import SwiftUI
 
@@ -227,17 +228,13 @@ struct ReaderView: View {
                     Text("Author")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text(page.authorAddress.rawValue)
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
+                    AddressCopyRow(address: page.authorAddress.rawValue)
 
                     Text("Document")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.top, 8)
-                    Text(page.documentAddress.rawValue)
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
+                    AddressCopyRow(address: page.documentAddress.rawValue)
                 }
                 .padding(.top, 16)
             }
@@ -257,6 +254,32 @@ struct ReaderView: View {
         case .cache(let date):
             "Showing verified cached version from \(date.formatted(date: .abbreviated, time: .shortened)). Looking for newer signed versions..."
         }
+    }
+}
+
+struct AddressCopyRow: View {
+    let address: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(address)
+                .font(.system(.caption, design: .monospaced))
+                .textSelection(.enabled)
+                .lineLimit(2)
+
+            Button {
+                copyToPasteboard(address)
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+            .labelStyle(.iconOnly)
+            .help("Copy address")
+        }
+    }
+
+    private func copyToPasteboard(_ text: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
 }
 
