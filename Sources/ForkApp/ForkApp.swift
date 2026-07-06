@@ -59,9 +59,10 @@ enum EditorMode: String, CaseIterable, Identifiable {
 
 struct ForkShell: View {
     @ObservedObject var model: ForkAppModel
+    @State private var columnVisibility: NavigationSplitViewVisibility = .detailOnly
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             List {
                 Section("Pages") {
                     ForEach(model.drafts) { draft in
@@ -122,20 +123,30 @@ struct ForkShell: View {
                 title: $model.draftTitle,
                 markdown: $model.draftMarkdown,
                 mode: $model.editorMode,
-                status: model.statusMessage,
                 theme: model.theme,
                 autosaveDraft: model.autosaveDraft,
                 openURL: model.openEditorMarkdownLink
             )
             .toolbar {
                 ToolbarItemGroup {
-                    Button {
-                        model.toggleEditorMode()
-                    } label: {
-                        Label(model.editorMode == .view ? "Edit" : "View", systemImage: "square.and.pencil")
+                    HStack(spacing: 2) {
+                        ForEach(EditorMode.allCases) { mode in
+                            Button {
+                                model.editorMode = mode
+                            } label: {
+                                Text(mode.rawValue)
+                                    .font(model.theme.uiFont(size: ForkTypography.headerControl, weight: .semibold))
+                                    .frame(width: 62, height: 28)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(model.editorMode == mode ? model.theme.selectedControlText : model.theme.primaryText)
+                            .background(model.editorMode == mode ? model.theme.accent : model.theme.editorSurface)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
                     }
-                    .help("Toggle View/Edit")
-                    .keyboardShortcut("e", modifiers: .command)
+                    .padding(2)
+                    .background(model.theme.editorSurface.opacity(0.86))
+                    .clipShape(RoundedRectangle(cornerRadius: 7))
 
                     Picker("Theme", selection: $model.theme) {
                         ForEach(ForkEditorTheme.allCases) { theme in
@@ -231,9 +242,9 @@ enum ForkEditorTheme: String, CaseIterable, Identifiable {
 
     static var saved: ForkEditorTheme {
         guard let rawValue = UserDefaults.standard.string(forKey: storageKey) else {
-            return .oudh
+            return .system
         }
-        return ForkEditorTheme(rawValue: rawValue) ?? .oudh
+        return ForkEditorTheme(rawValue: rawValue) ?? .system
     }
 
     var id: String {
@@ -427,7 +438,6 @@ struct EditorWorkspace: View {
     @Binding var title: String
     @Binding var markdown: String
     @Binding var mode: EditorMode
-    let status: String
     let theme: ForkEditorTheme
     let autosaveDraft: () -> Void
     let openURL: (URL) -> OpenURLAction.Result
@@ -439,44 +449,6 @@ struct EditorWorkspace: View {
             EditorBackground(theme: theme)
 
             VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(selectedTitle)
-                            .font(theme.titleFont(size: ForkTypography.h3, weight: .semibold))
-                            .foregroundStyle(theme.primaryText)
-                            .lineLimit(1)
-                        Text(mode == .view ? "Viewing local page" : "Editing local page")
-                            .font(theme.uiFont(size: ForkTypography.uiSmall))
-                            .foregroundStyle(theme.secondaryText)
-                    }
-
-                    Spacer()
-
-                    HStack(spacing: 2) {
-                        ForEach(EditorMode.allCases) { mode in
-                            Button {
-                                self.mode = mode
-                            } label: {
-                                Text(mode.rawValue)
-                                    .font(theme.uiFont(size: ForkTypography.headerControl, weight: .semibold))
-                                    .frame(width: 62, height: 28)
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(self.mode == mode ? theme.selectedControlText : theme.primaryText)
-                            .background(self.mode == mode ? theme.accent : theme.editorSurface)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                        }
-                    }
-                    .padding(2)
-                    .background(theme.editorSurface.opacity(0.86))
-                    .clipShape(RoundedRectangle(cornerRadius: 7))
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
-                .background(theme.chromeBackground.opacity(theme == .oudh ? 0.78 : 1))
-
-                Divider().overlay(theme.divider)
-
                 VStack(alignment: .leading, spacing: 16) {
                     switch mode {
                     case .view:
@@ -521,14 +493,6 @@ struct EditorWorkspace: View {
                     }
 
                     Spacer(minLength: 0)
-
-                    HStack {
-                        Text(status)
-                            .font(theme.uiFont(size: ForkTypography.uiSmall))
-                            .foregroundStyle(theme.secondaryText)
-                            .lineLimit(1)
-                        Spacer()
-                    }
                 }
                 .padding(.horizontal, 32)
                 .padding(.vertical, 24)
@@ -996,7 +960,6 @@ final class ForkAppModel: ObservableObject {
         do {
             _ = try persistDraft()
             try refreshDrafts()
-            statusMessage = "Local edits saved."
         } catch {
             errorMessage = error.localizedDescription
             statusMessage = "Page could not be autosaved."
