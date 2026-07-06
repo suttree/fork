@@ -68,7 +68,7 @@ public struct StoredDraftProvider: Sendable {
             markdown: """
             # A Small Fork Place
 
-            This page was written as Markdown, signed by its document key, exchanged with another local peer, and rendered after the author peer went offline.
+            This page was written as Markdown. Add a link like [[Projects]], switch to View, and follow it to create a new page.
             """,
             updatedAt: now
         )

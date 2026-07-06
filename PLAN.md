@@ -1,413 +1,77 @@
-# Fork Implementation Plan
+# fork Implementation Plan
 
-This file tracks the next concrete steps for turning Fork from a concept into a working prototype.
+This file tracks the current editor-first direction for fork.
 
 ## Product Direction
 
-Fork is now best framed as a networked Markdown editor with a built-in reader/discovery surface.
+fork is now a native Mac Markdown editor for local personal wikis and digital gardens.
 
-The earlier browser-like framing was useful for proving what Fork is not: it is not trying to be a Chromium fork, a tabbed web browser, or a compatibility layer for arbitrary websites. Fork should feel closer to Byword, Bear, iA Writer, or a personal digital garden editor, paired with a calm RSS-reader-like way to discover and read other people's signed Markdown places.
+The earlier p2p/signing/browser prototype has been removed from the active app direction. That work helped clarify the product, but the MVP should now focus on whether writing in fork feels good enough to become a daily tool.
 
-The app should have two primary modes:
-
-- **Editor**: the author's home base for writing, arranging, previewing, linking, and publishing their own Markdown place.
-- **Discover**: the reader surface for visiting other people's places, following trails, managing bookmarks/history, and reading verified cached copies when peers are offline.
-
-This keeps the peer-to-peer network central, but makes writing and maintaining a personal place the daily reason to open the app.
-
-The first goal is a thin vertical slice:
-
-```text
-Create identity -> write Markdown -> sign record -> verify record -> render page -> exchange with another local peer
-```
-
-That slice should prove the heart of Fork before the app grows wider.
+The app should feel closer to Byword, Bear, iA Writer, or a small personal wiki than a browser. Pages are created by writing links, not by managing addresses.
 
 ## Current Focus
 
-Build the smallest native macOS prototype that feels good as a local Markdown editor first, while keeping verified peer-to-peer publishing and discovery alive from the start.
-
-The first prototype does not need perfect UI, real internet discovery, or multi-device support. It does need a clearer product split:
-
-- Editor should make writing, previewing, adding pages, linking pages, and publishing feel direct.
-- Discover should make reading, bookmarks, history, local nicknames, and cached/offline states feel calm.
-- Signing, peer exchange, and verified cache behavior should remain core infrastructure, not a later bolt-on.
-
-## Prototype Progress
-
-Status: First in-memory vertical slice implemented.
-
-- Added a Swift Package with a `ForkCore` library and a small SwiftUI `ForkApp`.
-- Added key-derived author and document addresses using CryptoKit signing keys.
-- Added signed author manifests and signed document records with stable JSON encoding.
-- Signed record versions must now be positive.
-- Added previous-record hashes so signed updates point back to the records they replace.
-- First signed records now reject unexpected previous hashes.
-- Versioned signed records now reject history resets where later versions omit previous hashes.
-- Previous-record hashes must now decode to SHA-256-sized values before records enter cache.
-- Older signed records no longer replace newer cached records.
-- Same-version signed records no longer replace already cached records.
-- Newer signed records now have to point back to the cached record they replace.
-- Added verification before rendering; tampered records are refused.
-- Signed document verification now rejects malformed author public keys.
-- Signed document verification now rejects malformed document public keys.
-- Signed manifest shape validation now rejects malformed document addresses before cache acceptance.
-- Added a local two-peer exchange loop that fetches from an author peer, caches verified records on a reader peer, and renders the cached copy when no live author peer is available.
-- Added a local identity store abstraction with a Keychain-backed implementation for the macOS app.
-- Added stable stored document identity for the demo home page.
-- Added a file-backed verified record cache for manifests and document records.
-- Added a file-backed draft store and wired the demo publish path to it.
-- Wired the prototype editor to save drafts and publish signed records from the current draft.
-- Added a draft list in the writer, with page selection.
-- Replaced explicit Add Page actions with wiki-style page creation: authors add local Markdown links, follow them, and edit the created draft.
-- Added Fork-native wiki links with `[[Page Title]]` syntax for creating and opening local pages without knowing document keys first.
-- The writer page manager can publish the place directly after page-list changes.
-- Publishing from any page keeps the `home` draft as the author place home while including added pages in the manifest.
-- The app author peer now restores persisted signed records before publishing so updates continue the signed version chain across launches.
-- Publishing an added page keeps that page visible after publish instead of bouncing the reader back to Home.
-- Added draft deletion for non-home pages in the writer.
-- Added explicit local page ordering for writer drafts.
-- Legacy drafts without saved order are normalized when the author creates a new page.
-- Page-order controls now disable impossible moves and label non-home pages by position.
-- Added multi-document publishing so the signed author manifest can list every local draft.
-- Added author record bundles so peers exchange signed records through a portable boundary instead of shared in-memory state.
-- Incomplete author bundles are rejected before anything is cached.
-- Bundles with bad update chains are rejected before any newer manifest or document is cached.
-- Author bundles with duplicate document records are rejected before anything is cached.
-- Author bundles now reject manifest page titles that disagree with the signed document records.
-- Author bundles now reject manifests whose home page is not one of the listed document pages.
-- Manifests now reject duplicate document addresses and page roles that disagree with the home document.
-- Cache reload ignores saved bundles whose manifest titles no longer match their signed document records.
-- Cache reload now restores only complete verified author bundles after restart.
-- Verified cached peers can re-serve author bundles to other readers.
-- Added a byte-oriented bundle codec and source protocol so transports can move encoded signed record bundles.
-- Added a loopback HTTP transport that serves and fetches encoded author bundles over localhost.
-- Wired the prototype app's publish/read path through the loopback transport.
-- Added a second sample author place in the app, fetched over its own loopback peer.
-- Added a sample-author online/offline toggle to demonstrate verified cached reading in the app.
-- The Read sidebar now labels the local author place and sample author online/cache-only state.
-- The Read sidebar now keeps local and sample author addresses available as hover help.
-- Sample author identities now stay in memory instead of causing extra Keychain prompts on startup.
-- Added address entry, persisted bookmarks, and basic back/forward history to the prototype app.
-- The app now restores the last visited Fork address on launch when it can be rendered.
-- Browsing history now persists across launches as verified Fork addresses.
-- History can now be cleared from the sidebar.
-- History entries now prefer verified cached page titles over generic address labels.
-- Added verified cached rendering for `fork://doc/...` document deep links.
-- Added local bookmark nicknames so ugly key addresses can have personal labels.
-- Bookmark rows now distinguish author places from document pages.
-- Bookmark rows can now delete saved bookmarks from the sidebar.
-- Added document-address bookmarks and visible history entries in the sidebar.
-- Added copy controls for author and document addresses in the reader.
-- Reader and writer address-copy controls now confirm when an address is copied.
-- The reader can now copy the current signed page as a ready Markdown link.
-- The reader can now copy the current author place as a ready Markdown link.
-- Added document version and previous-record hints in the reader.
-- Surfaced live/cached/unavailable status in the browsing address bar.
-- Cached status messages now include the cached copy timestamp in the address bar.
-- Unavailable address states now explain invalid addresses, missing cached copies, and failed verification calmly.
-- Added a signed place page list in the sidebar from the current author manifest.
-- Place and writer sidebars now label home/current/page roles instead of leaning on raw addresses.
-- Sidebar rows now share a small title/subtitle/icon component for clearer ongoing UI polish.
-- Signed Markdown pages can now follow `fork://` links inside the app while refusing non-Fork links.
-- The sample place now includes an internal two-page trail for testing link-led browsing.
-- Added colorful local reader themes for Classic, Starship, and NvChad reading modes.
-- Added tests for the vertical slice, tamper refusal, and key-derived addresses.
-
-Still not done:
-
-- The writer page manager works locally, but still needs product polish around richer page roles and larger places.
-- The app shell should move from a cramped reader/writer split toward explicit Editor and Discover modes.
-- The Editor side needs to feel more like a real Markdown writing app before the MVP is credible.
-- The Discover side needs to feel more like an RSS-reader-style place reader than a generic browser.
-- The peer loop is local/localhost-only, not a real p2p transport.
-- The app shell is intentionally plain and only demonstrates the slice.
-
-## Milestone 1: Project Scaffold
-
-Status: Mostly done
-
-- Create native macOS app scaffold.
-- Prefer Swift and SwiftUI.
-- Keep the app small and plain at first.
-- Add a simple split between reading and writing.
-- Add basic local persistence for drafts and verified records.
-
-Output:
-
-- App launches.
-- User can see an empty reader/writer shell.
-
-Notes:
-
-- Verified records can now be mirrored to a file-backed cache.
-- Drafts can now be mirrored to a file-backed store.
-
-## Milestone 2: Local Identity
-
-Status: Mostly done
-
-- Generate an author keypair on first launch.
-- Store private key securely.
-- Derive a `fork://author/<key>` address from the public key.
-- Show the address in the app.
-- Add a way to copy the address.
-
-Output:
-
-- A fresh install has a stable Fork author address.
-- The private key stays local.
-
-Notes:
-
-- `ForkApp` now loads or creates its author identity through Keychain.
-- Tests use an in-memory identity store so they do not touch the user's Keychain.
-- The reader exposes copy controls for key-derived addresses.
-
-## Milestone 3: Markdown Documents
-
-Status: Mostly done
-
-- Create a Markdown document.
-- Assign it a stable document identity.
-- Derive a `fork://doc/<key>` address.
-- Edit Markdown locally.
-- Render Markdown in a read view.
-
-Output:
-
-- User can write and preview one local Fork page.
-
-Notes:
-
-- The demo home document now loads or creates its document identity through the same app identity provider, so its `fork://doc/...` address is stable across launches.
-- The demo home draft now loads from a draft store when one exists, otherwise it creates the default Markdown draft.
-- The prototype editor can now save edits back to the draft store and publish a signed record from the current draft.
-- The writer now quietly autosaves local title and Markdown edits after a short pause.
-- The reader now calls out when it is showing the last signed version while unpublished local edits are open in the writer.
-- The writer has an edit/preview switch for local Markdown drafts.
-- The reader now renders Markdown as blocks so headings and paragraphs keep their structure.
-- Draft titles are now trimmed before saving, with blank titles falling back to `Untitled Page`.
-- The writer can now switch between local Markdown drafts. Each draft uses its own stored document identity when published.
-- The writer creates pages wiki-style: a local Markdown link can be followed to open an existing draft or create a new one ready to edit.
-- Fork-native `[[Page Title]]` links render as clickable local page links, keeping authoring free of fake URLs.
-- The writer sidebar exposes Publish Place beside page management actions.
-- The writer exposes move-up and move-down controls for non-home pages.
-- The writer labels ordered pages as Page 1, Page 2, etc. while keeping Home distinct.
-- The writer sidebar now uses home-specific icons so the place entry page stays visually distinct.
-- Writer selection status now names the home page or selected local page.
-- Publishing an added page no longer accidentally promotes it to the home page; the protected `home` draft remains the place entry point.
-- After publishing an added page, the reader stays on that page while the author address still resolves to Home.
-- The writer shows the selected draft's stable document address with a copy control.
-- The selected draft address area can also copy a ready Markdown link.
-- The writer can copy any local page as a Markdown `fork://` link for building trails between pages.
-- Writer page rows now keep each draft's stable document address available as hover help.
-- Copied Markdown links normalize messy title whitespace before escaping link text.
-- Visiting one of your own signed pages now selects the matching local draft in the writer.
-- Non-home drafts can now be deleted from the writer, with confirmation, before the next signed publish.
-- Publishing now signs document records for every local draft and lists them in the author manifest, with the protected `home` draft as the home document.
-- Republishing after removing a page exports only the documents listed by the latest author manifest.
-- Cached document addresses can now be rendered directly as verified deep links.
-- The sidebar can now show and visit the pages listed by the current verified author manifest.
-- The reader toolbar can now jump from a document page back to the current place's home page.
-- Next: improve richer page roles and larger-place management polish.
-
-## Milestone 3A: Editor-First App Shape
-
-Status: Started
-
-- Reframe the app shell around two primary modes: Editor and Discover.
-- Make Editor the default daily workspace for the user's own place.
-- Move local page management, draft status, preview, publish, and page links into the Editor surface.
-- Keep Discover focused on reading other places, bookmarks, history, address entry, and cached/offline state.
-- Reduce the feeling that writing and browsing are competing in one split pane.
-- Preserve the ability to preview the current page while editing.
-
-Output:
-
-- Fork feels like a networked Markdown editor first.
-- The reader/discovery model remains available, but it is not the main writing workspace.
-
-Notes:
-
-- This is a product-direction milestone, not a crypto/networking milestone.
-- The current split-pane prototype can be reused, but it should be reorganized rather than simply decorated.
-- A top-level Editor/Discover switch is the likely next UI step.
-- Started the Editor/Discover split in the app shell.
-- Editor now owns the main workspace by default and has a modal View/Edit switch for the selected local page.
-- Reader themes now apply across the app chrome, sidebar, Discover, and Editor surfaces instead of only styling rendered pages.
-- Editor drafts now save automatically as edits are made, without a visible Save Draft button.
-- Startup now avoids eager republishing and eager document-key lookups for every draft, reducing repeated Keychain prompts.
-- Startup writer sync now uses known public document addresses from signed manifests instead of opening draft private keys.
-- App typography now uses a larger readable scale inspired by duncangough.com, with 38px H1s and 21px body text for Markdown reading and writing.
-
-## Milestone 4: Signed Records
-
-Status: Started
-
-- Define first JSON shape for author manifests.
-- Define first JSON shape for document records.
-- Sign document records.
-- Sign author manifests.
-- Verify signatures before rendering.
-- Refuse to render invalid records.
-- Reject non-positive signed record versions.
-- Link signed updates to the previous signed record hash.
-- Reject first record versions that claim a previous signed record hash.
-- Reject later record versions that omit the previous signed record hash.
-- Reject malformed previous record hashes before cache acceptance.
-- Keep existing cached records when an older valid record arrives later.
-- Keep existing cached records when another valid record arrives with the same version.
-- Require newer records to link to the cached previous record before replacing it.
-- Validate signed record type and key shape before accepting records into cache.
-- Validate document address key shapes listed by author manifests before accepting them into cache.
-- Validate that manifest page roles agree with the declared home document.
-
-Output:
-
-- Fork renders verified Markdown, not arbitrary local text.
-- Invalid signatures fail visibly and calmly.
-- Signed records form a simple auditable update chain.
-
-## Milestone 5: Local Peer Loop
-
-Status: Mostly done
-
-- Run two local peer instances on one machine.
-- Publish a signed document from peer A.
-- Fetch it from peer B.
-- Verify it on peer B.
-- Cache it on peer B.
-- Render it from cache if peer A is offline.
-
-Output:
-
-- The core p2p/offline behavior works locally.
-- Cached signed content remains readable when the author peer is unavailable.
-
-Notes:
-
-- The local loop is still in-process, but verified records now survive peer restart through `FileRecordCache`.
-- Invalid signatures and malformed cache files are ignored on load rather than rendered.
-- Incomplete bundles are rejected without partially caching their manifests or documents.
-- Bad update chains in bundles are rejected before any partial cache mutation.
-- Fetching now goes through encoded `AuthorRecordBundle` data, which is closer to the shape a real transport will move across the network.
-- A reader with verified cached records can now act as an `AuthorBundleSource` for another reader.
-
-## Milestone 6: First Real P2P Transport
-
-Status: Started
-
-- Choose the p2p building block.
-- Prefer boring, proven infrastructure.
-- Evaluate whether the networking core should be Swift-native or a small helper process.
-- Add peer discovery.
-- Exchange manifests, document records, and blobs over the network.
-- Serve cached verified records to other peers.
-
-Output:
-
-- Two machines can exchange and verify Fork pages.
-
-Notes:
-
-- The first transport is intentionally local-only: `LoopbackAuthorBundleServer` and `LoopbackAuthorBundleClient` exchange encoded author bundles over HTTP on localhost.
-- This is not real p2p discovery yet, but it proves the app can move signed records through a socket boundary and verify/cache them on the receiving side.
-- The app now uses that localhost transport for its prototype author-to-reader flow.
-- The app also starts a second sample author peer with a stable local identity, so the read path can visit another local author address through the same transport.
-
-## Milestone 7: Offline-First UX
-
-Status: Started
-
-- Show whether the page is live, cached, or unavailable.
-- Show cache age.
-- Keep offline states calm.
-- Keep reading possible whenever a verified cached copy exists.
-
-Output:
-
-- Offline is treated as a normal reading state.
-
-Notes:
-
-- The address bar now shows the current browsing status so live, cached, and unavailable states are visible outside the writer panel.
-- The address bar can now copy the current Fork address directly and confirm the copy.
-- The address bar includes cache timestamps when showing a verified cached copy.
-- Address failures now distinguish invalid Fork addresses, unavailable verified cache entries, and refused unverifiable records.
-- The sample author can be taken offline in the app after a live visit, so the cached-reader path is visible without leaving the prototype.
-- Taking the sample author offline while reading it now immediately refreshes the reader into the verified cached state.
-- Bringing the sample author online while reading it now immediately refreshes the reader back to the live signed state.
-- Sample online/offline transitions now share the same current-page refresh path.
-- Back/forward history restores now use the normal live-then-cache render path for author addresses.
-- The reader has a persisted theme picker with colorful reader-owned Classic, Starship, and NvChad modes. Authors may publish content and metadata, but the reader keeps final control of how pages look locally.
-
-## Milestone 8: Bookmark-Led Browsing
-
-Status: Started
-
-- Bookmark author addresses.
-- Bookmark document addresses.
-- Add local nicknames for ugly addresses.
-- Add history and back/forward.
-- Keep the app tabless.
-
-Output:
-
-- Fork browsing starts to feel different from URL/domain browsing.
-
-Notes:
-
-- The app now has a Fork address field, bookmark persistence, and back/forward history for visited author places.
-- The app remembers the last visited Fork address across launches.
-- Browsing history now persists across launches.
-- Browsing history now cleans invalid or over-limit stored entries on launch.
-- History can now be cleared from the sidebar.
-- Empty history now has a quiet visible state.
-- The address field can visit cached author and document addresses.
-- The address field can copy the current Fork address after trimming accidental whitespace.
-- History entries use verified cached page titles when available.
-- History rows now label author places and document pages instead of showing raw keys inline.
-- History rows now mark the current author or document entry.
-- History rows now restore their original back/forward position instead of adding duplicate visits.
-- Bookmarks now support local nicknames.
-- Bookmarking can now save author and document addresses.
-- Bookmarking now uses the displayed page address even if the address field has unsent edits.
-- Bookmark saves now distinguish new bookmarks from updated nicknames.
-- Bookmark titles are now trimmed before saving, with blank titles falling back to `Untitled Bookmark`.
-- Bookmark nicknames are now trimmed before saving, with blank nicknames falling back to page titles.
-- Loaded bookmark identities now follow their Fork addresses instead of stale stored ids.
-- Bookmark saves now immediately show the normalized local display title in the nickname field.
-- Bookmark rows show whether a saved address is an author place or document page.
-- Bookmark rows keep the raw Fork address available as hover help.
-- Empty bookmarks now have a quiet visible state.
-- Bookmark rows can now delete saved entries.
-- Bookmark deletion now refreshes the nickname field from the displayed page address, not unsent address edits.
-- Bookmark delete feedback now distinguishes removed entries from entries already gone.
-- History rows refresh immediately when bookmark nicknames are saved or deleted.
-- Back/forward navigation now revisits author places through the normal live-then-cache path.
-- Address and back/forward failures now keep the history list and navigation controls in sync.
-- The place page list now labels home and current pages clearly while keeping raw addresses available as help text.
-- The reader Home action now returns through the author place address, not just the home document deep link.
-- Reader Markdown links now keep `fork://` navigation inside Fork and refuse non-Fork URLs.
-- Writer page rows can copy ready-to-paste Markdown links to local document addresses.
-
-## First Technical Questions To Resolve
-
-- Should document keys be independent keypairs, or should document addresses be derived from author key plus document id?
-- Which Swift Markdown renderer gives us the best constrained rendering path?
-- Can CryptoKit cover the signing model cleanly?
-- What is the most maintainable p2p layer for a native Mac app?
-- Should the local peer loop be implemented before or after the visible app shell?
-
-## Near-Term Definition Of Done
-
-The first vertical slice is done when:
-
-- one local author can publish a signed Markdown document
-- another local peer can fetch it
-- the second peer verifies it before rendering
-- the second peer can still render its cached verified copy when the first peer is offline
-- the UI clearly says when a page is cached
-
-No tabs. No JavaScript. No domains.
+Build a polished local Markdown editor with:
+
+- modal View/Edit workflow
+- page list sidebar
+- local file-backed drafts
+- wiki-style `[[Page Title]]` links
+- keyboard-first formatting
+- whole-app themes
+- no publishing, signing, unlock prompts, history, bookmarks, address bars, or p2p network surface
+
+## Completed
+
+- Reframed fork around editing rather than publishing.
+- Removed the active p2p/signing/document-address app path.
+- Removed bookmarks, history, address browsing, sample peers, and publish controls from the app UI.
+- Kept a local file-backed draft store as the core persistence layer.
+- Added a page-only sidebar for selecting, reordering, and deleting local pages.
+- Added modal View/Edit mode.
+- Added `Command-E` and `:e` mode toggles.
+- Added `Command-B` Markdown bold wrapping for selected editor text.
+- Added `Command-U` underline wrapping for selected editor text.
+- Added paste-over-selection URL handling, producing Markdown link syntax.
+- Added `[[Page Title]]` wiki links that open existing local pages or create missing pages.
+- Added the `Oudh` theme based on duncangough.com: pale green patterned background, serif typography, blue text, and blue links.
+- Renamed the app-facing title to `fork`.
+- Replaced the eye icon with the magic/book artwork.
+
+## MVP Definition
+
+The MVP is in good shape when:
+
+- Writing and previewing a page feels calm and immediate.
+- The sidebar makes a small wiki or portfolio easy to navigate.
+- Wiki links are natural enough that authors do not think about URLs.
+- Common keyboard actions work without reaching for toolbar buttons.
+- Themes apply across the whole app and feel intentional.
+- The app opens without keychain prompts or network setup.
+- Drafts survive restart reliably.
+
+## Near-Term Next Steps
+
+- Improve Markdown rendering coverage beyond headings and paragraphs.
+- Add inline toolbar or menu commands for bold, underline, and link creation.
+- Add a faster page switcher/search command.
+- Add backlinks or “linked mentions” for wiki pages.
+- Add export to a folder of Markdown files.
+- Add import from a folder of Markdown files.
+- Decide whether local pages should eventually be plain `.md` files instead of JSON draft records.
+- Revisit publishing only after the local editor feels excellent.
+
+## Out Of Scope For Current MVP
+
+- P2P networking
+- signed records
+- document keys
+- author identities
+- keychain storage
+- publishing
+- remote discovery
+- bookmarks
+- browsing history
+- address bars
+- arbitrary HTML or JavaScript execution

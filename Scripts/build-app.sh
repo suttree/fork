@@ -20,8 +20,8 @@ swift build --disable-sandbox --product ForkApp
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
-cp "$ROOT_DIR/.build/debug/ForkApp" "$MACOS_DIR/Fork"
-chmod +x "$MACOS_DIR/Fork"
+cp "$ROOT_DIR/.build/debug/ForkApp" "$MACOS_DIR/fork"
+chmod +x "$MACOS_DIR/fork"
 
 if [[ -f "$ICON_SOURCE" ]]; then
   rm -rf "$ICON_TIFF_DIR"
@@ -49,9 +49,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>Fork</string>
+  <string>fork</string>
   <key>CFBundleExecutable</key>
-  <string>Fork</string>
+  <string>fork</string>
   <key>CFBundleIconFile</key>
   <string>ForkAppIcon</string>
   <key>CFBundleIdentifier</key>
@@ -59,7 +59,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>Fork</string>
+  <string>fork</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
