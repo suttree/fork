@@ -73,8 +73,7 @@ struct ForkShell: View {
                                 SidebarRow(
                                     title: draft.title,
                                     subtitle: draftSubtitle(for: draft),
-                                    iconName: draftIconName(for: draft),
-                                    theme: model.theme
+                                    iconName: draftIconName(for: draft)
                                 )
                             }
                             .buttonStyle(.plain)
@@ -116,8 +115,6 @@ struct ForkShell: View {
                 }
             }
             .navigationTitle("fork")
-            .scrollContentBackground(.hidden)
-            .background(model.theme.sidebarBackground)
         } detail: {
             EditorWorkspace(
                 title: $model.draftTitle,
@@ -180,7 +177,7 @@ struct ForkShell: View {
 
     private func draftSubtitle(for draft: DraftDocument) -> String {
         if draft.id == model.selectedDraftID {
-            return draft.id == "home" ? "Editing home" : "Editing \(pageLabel(for: draft))"
+            return draft.id == "home" ? "Home page" : pageLabel(for: draft)
         }
         if draft.id == "home" {
             return "Home page"
@@ -211,23 +208,21 @@ struct SidebarRow: View {
     let title: String
     let subtitle: String
     let iconName: String
-    let theme: ForkEditorTheme
 
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(theme.uiFont(size: ForkTypography.ui, weight: .semibold))
-                    .foregroundStyle(theme.primaryText)
+                    .font(.system(size: ForkTypography.ui, weight: .semibold))
                     .lineLimit(1)
                 Text(subtitle)
-                    .font(theme.uiFont(size: ForkTypography.uiSmall))
-                    .foregroundStyle(theme.secondaryText)
+                    .font(.system(size: ForkTypography.uiSmall))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         } icon: {
             Image(systemName: iconName)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(.secondary)
         }
     }
 }
